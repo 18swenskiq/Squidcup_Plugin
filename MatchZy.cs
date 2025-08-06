@@ -101,7 +101,7 @@ namespace MatchZy
             if (!hotReload) {
                 AutoStart();
             } else {
-                // Pluign should not be reloaded while a match is live (this would messup with the match flags which were set)
+                // Plugin should not be reloaded while a match is live (this would messup with the match flags which were set)
                 // Only hot-reload the plugin if you are testing something and don't want to restart the server time and again.
                 UpdatePlayersMap();
                 AutoStart();

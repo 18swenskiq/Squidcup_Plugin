@@ -64,15 +64,25 @@ namespace MatchZy
         public void OnPlayerReady(CCSPlayerController? player, CommandInfo? command)
         {
             if (player == null) return;
-            Log($"[!ready command] Sent by: {player.UserId} readyAvailable: {readyAvailable} matchStarted: {matchStarted}");
+            Log($"[!ready command] Sent by: {player.UserId} readyAvailable: {readyAvailable} matchStarted: {matchStarted} waitForMap: {matchConfig.WaitForMap}");
             if (readyAvailable && !matchStarted)
             {
                 if (player.UserId.HasValue)
                 {
-                    if (!playerReadyStatus.ContainsKey(player.UserId.Value))
+                    if (matchConfig.WaitForMap)
                     {
-                        playerReadyStatus[player.UserId.Value] = false;
+                        var currentMapName = Server.MapName;
+                        if (!matchConfig.Maplist.Contains(currentMapName))
+                        {
+                            PrintToPlayerChat(player, Localizer["matchzy.ready.mapnotinpool"]);
+                            return;
+                        }
                     }
+
+                    if (!playerReadyStatus.ContainsKey(player.UserId.Value))
+                        {
+                            playerReadyStatus[player.UserId.Value] = false;
+                        }
                     if (playerReadyStatus[player.UserId.Value])
                     {
                         // player.PrintToChat($"{chatPrefix} You are already ready!");
@@ -88,6 +98,12 @@ namespace MatchZy
                     HandleClanTags();
                 }
             }
+        }
+
+        [ConsoleCommand("css_getmap", "Gets the current map name")]
+        public void OnGetMap(CCSPlayerController? player, CommandInfo? command)
+        {
+            PrintToAllChat(Server.MapName);
         }
 
         [ConsoleCommand("css_unready", "Marks the player unready")]

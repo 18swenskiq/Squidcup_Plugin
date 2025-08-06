@@ -48,6 +48,9 @@ namespace MatchZy
 
         [JsonPropertyName("scrim")]
         public bool Scrim { get; set; } = false;
+        
+        [JsonPropertyName("wait_for_map")]
+        public bool WaitForMap { get; set; } = true;
 
         [JsonPropertyName("wingman")]
         public bool Wingman { get; set; } = false;

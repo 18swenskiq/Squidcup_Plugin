@@ -477,6 +477,10 @@ namespace MatchZy
             {
                 matchConfig.SkipVeto = bool.Parse(jsonDataObject["skip_veto"]!.ToString());
             }
+            if (jsonDataObject["wait_for_map"] != null)
+            {
+                matchConfig.WaitForMap = bool.Parse(jsonDataObject["wait_for_map"]!.ToString());
+            }
             if (jsonDataObject["wingman"] != null)
             {
                 matchConfig.Wingman = bool.Parse(jsonDataObject["wingman"]!.ToString());
