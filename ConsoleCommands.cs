@@ -103,7 +103,9 @@ namespace MatchZy
         [ConsoleCommand("css_getmap", "Gets the current map name")]
         public void OnGetMap(CCSPlayerController? player, CommandInfo? command)
         {
-            PrintToAllChat(Server.MapName);
+            var mapId = Workshop.GetID();
+            PrintToAllChat(mapId);
+            Console.WriteLine(mapId);
         }
 
         [ConsoleCommand("css_unready", "Marks the player unready")]
@@ -143,7 +145,7 @@ namespace MatchZy
             if (player.TeamNum == knifeWinner)
             {
                 PrintToAllChat(Localizer["matchzy.knife.decidedtostay", knifeWinnerName]);
-                // Server.PrintToChatAll($"{chatPrefix} {ChatColors.Green}{knifeWinnerName}{ChatColors.Default} has decided to stay!");
+                Server.PrintToChatAll($"{chatPrefix} {ChatColors.Green}{knifeWinnerName}{ChatColors.Default} has decided to stay!");
                 StartLive();
             }
         }
