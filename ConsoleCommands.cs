@@ -100,7 +100,7 @@ namespace MatchZy
             }
         }
 
-        [ConsoleCommand("css_getmap", "Gets the current map name")]
+        [ConsoleCommand("css_getmap", "Gets the current map id")]
         public void OnGetMap(CCSPlayerController? player, CommandInfo? command)
         {
             var mapId = Workshop.GetID();
