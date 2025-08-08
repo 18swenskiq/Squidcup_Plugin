@@ -1,6 +1,8 @@
 {
   "matchzy.ready.markedready": "您已被標記為準備完成。",
   "matchzy.ready.markedunready": "您已經被標記為未準備。",
+  "matchzy.ready.matchnotloaded": "比賽尚未載入。請等待管理員載入比賽後再準備。",
+  "matchzy.ready.mapnotinpool": "當前地圖不在比賽地圖池中。請等待切換到有效地圖。",
   "matchzy.ready.readytotestorebackupinfomessage": "Unready players: {0}. Please type .ready when you are ready to restore the match backup. {1}",
 
   "matchzy.knife.sidedecisionpending": "{green}{0}{default} 贏下了刀局。等待他們輸入 {green}.stay{default} 或者 {green}.switch{default}。",

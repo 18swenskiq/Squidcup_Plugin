@@ -1,6 +1,8 @@
 {
     "matchzy.ready.markedready": "Vous avez été marqué comme prêt.",
     "matchzy.ready.markedunready": "Vous avez été marqué comme NON prêt.",
+    "matchzy.ready.matchnotloaded": "Un match n'a pas encore été chargé. Veuillez attendre qu'un administrateur charge un match avant de vous déclarer prêt.",
+    "matchzy.ready.mapnotinpool": "La carte actuelle n'est pas dans le pool de cartes du match. Veuillez attendre un changement de carte vers une carte valide.",
     "matchzy.ready.readytotestorebackupinfomessage": "Unready players: {0}. Please type .ready when you are ready to restore the match backup. {1}",
   
     "matchzy.knife.sidedecisionpending": "{green}{0}{default} a remporté la manche au couteau. En attente de leur saisie {green}.stay{default} ou {green}.switch{default}.",

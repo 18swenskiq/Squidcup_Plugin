@@ -1,6 +1,8 @@
 {
   "matchzy.ready.markedready": "Foi marcado como Pronto.",
   "matchzy.ready.markedunready": "Foi marcado como NÃO pronto",
+  "matchzy.ready.matchnotloaded": "Uma partida ainda não foi carregada. Por favor, aguarde que um administrador carregue uma partida antes de ficar pronto.",
+  "matchzy.ready.mapnotinpool": "O mapa atual não está no conjunto de mapas da partida. Por favor, aguarde uma mudança de mapa para um mapa válido.",
   "matchzy.ready.readytotestorebackupinfomessage": "Jogadores que não estão prontos: {0}. Por favor, escreve .ready quando estiveres pronto para restaurar o backup da partida. {1}",
 
   "matchzy.knife.sidedecisionpending": "{green}{0}{default} ganhou a ronda de faca. À espera que escolham {green}.stay{default} ou {green}.switch{default}.",

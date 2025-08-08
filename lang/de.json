@@ -1,6 +1,8 @@
 {
     "matchzy.ready.markedready": "Du bist bereit.",
     "matchzy.ready.markedunready": "Du bist nicht mehr bereit.",
+    "matchzy.ready.matchnotloaded": "Ein Match wurde noch nicht geladen. Bitte warte, bis ein Admin ein Match lädt, bevor du dich bereit erklärst.",
+    "matchzy.ready.mapnotinpool": "Die aktuelle Map ist nicht im Map-Pool des Matches. Bitte warte auf einen Map-Wechsel zu einer gültigen Map.",
     "matchzy.ready.readytotestorebackupinfomessage": "Unready players: {0}. Please type .ready when you are ready to restore the match backup. {1}",
   
     "matchzy.knife.sidedecisionpending": "{green}{0}{default} hat die Messerrunde gewonnen. Es wird darauf gewartet, dass sie {green}.stay{default} oder {green}.switch{default} in den Chat schreiben.",

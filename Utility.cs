@@ -143,6 +143,10 @@ namespace MatchZy
         private void SendUnreadyPlayersMessage()
         {
             if (!isWarmup || matchStarted) return;
+            
+            // Don't send messages if a match isn't loaded yet
+            if (!isMatchSetup) return;
+            
             List<string> unreadyPlayers = new();
 
             foreach (var key in playerReadyStatus.Keys)

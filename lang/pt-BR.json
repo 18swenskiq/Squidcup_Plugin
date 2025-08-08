@@ -1,6 +1,8 @@
 {
   "matchzy.ready.markedready": "Você foi marcado como {green}READY{default}.",
   "matchzy.ready.markedunready": "Você foi marcado como {darkred}NOTREADY{default}.",
+  "matchzy.ready.matchnotloaded": "Uma partida ainda não foi carregada. Por favor, aguarde um administrador carregar uma partida antes de ficar pronto.",
+  "matchzy.ready.mapnotinpool": "O mapa atual não está no pool de mapas da partida. Por favor, aguarde uma mudança de mapa para um mapa válido.",
   "matchzy.ready.readytotestorebackupinfomessage": "Unready players: {0}. Please type .ready when you are ready to restore the match backup. {1}",
 
   "matchzy.knife.sidedecisionpending": "{green}{0}{default} ganhou a rodada faca. Aguardando eles digitarem {green}.stay{default} ou {green}.switch{default}.",

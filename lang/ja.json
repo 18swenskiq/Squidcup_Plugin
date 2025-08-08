@@ -1,6 +1,8 @@
 {
   "matchzy.ready.markedready": "準備完了としてマークされました。",
   "matchzy.ready.markedunready": "準備ができていないとマークされています。",
+  "matchzy.ready.matchnotloaded": "試合がまだ読み込まれていません。管理者が試合を読み込むまでお待ちください。",
+  "matchzy.ready.mapnotinpool": "現在のマップは試合のマッププールにありません。有効なマップへのマップ変更をお待ちください。",
   "matchzy.ready.readytotestorebackupinfomessage": "Unready players: {0}. Please type .ready when you are ready to restore the match backup. {1}",
 
   "matchzy.knife.sidedecisionpending": "{green}{0}{default} ナイフラウンドに勝利しました。 入力を待機してます。 {green}.stay{default} か {green}.switch{default}.",

@@ -1,6 +1,8 @@
 {
   "matchzy.ready.markedready": "Siz tayyor deb belgilandingiz.",
   "matchzy.ready.markedunready": "Siz tayyor emas deb belgilandingiz.",
+  "matchzy.ready.matchnotloaded": "O'yin hali yuklanmagan. Tayyor deb belgilashdan oldin administrator o'yinni yuklashini kuting.",
+  "matchzy.ready.mapnotinpool": "Joriy xarita o'yin xaritalari ro'yxatida yo'q. Yaroqli xaritaga o'zgartirishni kuting.",
   "matchzy.ready.readytotestorebackupinfomessage": "Tayyormas oʻyinchilar: {0}. Oʻyinning zaxira nusxasini tiklashga tayyor boʻlganingizda .ready yozing. {1}",
 
   "matchzy.knife.sidedecisionpending": "{green}{0}{default} pichoq raundida g‘alaba qozondi. Ularni {green}.stay{default} yoki {green}.switch{default} yozishini kutmoqdamiz.",

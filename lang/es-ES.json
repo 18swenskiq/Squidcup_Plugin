@@ -1,6 +1,8 @@
 {
   "matchzy.ready.markedready": "Has sido marcado como preparado.",
   "matchzy.ready.markedunready": "Has sido marcado como NO preparado.",
+  "matchzy.ready.matchnotloaded": "Un partido aún no ha sido cargado. Por favor, espera a que un administrador cargue un partido antes de prepararte.",
+  "matchzy.ready.mapnotinpool": "El mapa actual no está en el grupo de mapas del partido. Por favor, espera a que cambie a un mapa válido.",
   "matchzy.ready.readytotestorebackupinfomessage": "Jugadores no preparados: {0}. Por favor, escribe .ready cuando estes listo para restaurar la copia de seguridad de la partida. {1}",
 
   "matchzy.knife.sidedecisionpending": "{green}{0}{default} ganó la ronda de cuchillos. Esperando que escriban {green}.stay{default} (mantener) o {green}.switch{default} (cambiar) el bando.",

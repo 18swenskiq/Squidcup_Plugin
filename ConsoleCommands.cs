@@ -69,14 +69,31 @@ namespace MatchZy
             {
                 if (player.UserId.HasValue)
                 {
-                    if (matchConfig.WaitForMap)
+                    // Check if a match is properly set/loaded
+                    if (!isMatchSetup)
                     {
-                        var currentMapName = Server.MapName;
-                        if (!matchConfig.Maplist.Contains(currentMapName))
+                        PrintToPlayerChat(player, Localizer["matchzy.ready.matchnotloaded"]);
+                        return;
+                    }
+
+                    // Check if the current map is in the match config maplist
+                    var currentMapId = Workshop.GetID();
+                    bool mapInPool = false;
+                    
+                    // Check if current map ID is in the maplist
+                    foreach (string map in matchConfig.Maplist)
+                    {
+                        if (map == currentMapId || map == Server.MapName)
                         {
-                            PrintToPlayerChat(player, Localizer["matchzy.ready.mapnotinpool"]);
-                            return;
+                            mapInPool = true;
+                            break;
                         }
+                    }
+                    
+                    if (!mapInPool)
+                    {
+                        PrintToPlayerChat(player, Localizer["matchzy.ready.mapnotinpool"]);
+                        return;
                     }
 
                     if (!playerReadyStatus.ContainsKey(player.UserId.Value))

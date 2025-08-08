@@ -1,6 +1,8 @@
 {
   "matchzy.ready.markedready": "You have been marked as ready.",
   "matchzy.ready.markedunready": "You have been marked as NOT ready.",
+  "matchzy.ready.matchnotloaded": "A match has not been loaded yet. Please wait for an admin to load a match before readying up.",
+  "matchzy.ready.mapnotinpool": "The current map is not in the match map pool. Please wait for a map change to a valid map.",
   "matchzy.ready.readytotestorebackupinfomessage": "Unready players: {0}. Please type .ready when you are ready to restore the match backup. {1}",
 
   "matchzy.knife.sidedecisionpending": "{green}{0}{default} won the knife round. Waiting for them to type {green}.stay{default} or {green}.switch{default}.",
