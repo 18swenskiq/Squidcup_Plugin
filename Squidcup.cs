@@ -14,9 +14,9 @@ namespace Squidcup
     {
 
         public override string ModuleName => "Squidcup";
-        public override string ModuleVersion => "0.8.11";
+        public override string ModuleVersion => "0.9.0";
 
-        public override string ModuleAuthor => "WD- (https://github.com/shobhit-pathak/)";
+        public override string ModuleAuthor => "Squidski (https://github.com/18swenskiq)";
 
         public override string ModuleDescription => "A plugin for running and managing CS2 practice/pugs/scrims/matches!";
 
