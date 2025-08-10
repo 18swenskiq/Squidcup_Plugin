@@ -4,17 +4,17 @@ using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Cvars;
 using System.Text.Json;
 
-namespace MatchZy;
+namespace Squidcup;
 
-public partial class MatchZy
+public partial class Squidcup
 {
 
     public CounterStrikeSharp.API.Modules.Timers.Timer? coachKillTimer = null;
 
     public HashSet<CCSPlayerController> GetAllCoaches()
     {
-        HashSet<CCSPlayerController> coaches = new(matchzyTeam1.coach);
-        coaches.UnionWith(matchzyTeam2.coach);
+        HashSet<CCSPlayerController> coaches = new(squidcupTeam1.coach);
+        coaches.UnionWith(squidcupTeam2.coach);
 
         return coaches;
     }
@@ -41,7 +41,7 @@ public partial class MatchZy
             return;
         }
 
-        if (matchzyTeam1.coach.Contains(player!) || matchzyTeam2.coach.Contains(player!))
+        if (squidcupTeam1.coach.Contains(player!) || squidcupTeam2.coach.Contains(player!))
         {
             ReplyToUserCommand(player, "You are already coaching a team!");
             return;
@@ -97,7 +97,7 @@ public partial class MatchZy
         foreach (CCSPlayerController coach in coaches)
         {
             if (!IsPlayerValid(coach)) continue;
-            Team coachTeam = matchzyTeam1.coach.Contains(coach) ? matchzyTeam1 : matchzyTeam2;
+            Team coachTeam = squidcupTeam1.coach.Contains(coach) ? squidcupTeam1 : squidcupTeam2;
             int coachTeamNum = teamSides[coachTeam] == "CT" ? 3 : 2;
             coach.InGameMoneyServices!.Account = 0;
 
@@ -186,24 +186,24 @@ public partial class MatchZy
 
     public CsTeam GetCoachTeam(CCSPlayerController coach)
     {
-        if (matchzyTeam1.coach.Contains(coach))
+        if (squidcupTeam1.coach.Contains(coach))
         {
-            if (teamSides[matchzyTeam1] == "CT")
+            if (teamSides[squidcupTeam1] == "CT")
             {
                 return CsTeam.CounterTerrorist;
             }
-            else if (teamSides[matchzyTeam1] == "TERRORIST")
+            else if (teamSides[squidcupTeam1] == "TERRORIST")
             {
                 return CsTeam.Terrorist;
             }
         }
-        if (matchzyTeam2.coach.Contains(coach))
+        if (squidcupTeam2.coach.Contains(coach))
         {
-            if (teamSides[matchzyTeam2] == "CT")
+            if (teamSides[squidcupTeam2] == "CT")
             {
                 return CsTeam.CounterTerrorist;
             }
-            else if (teamSides[matchzyTeam2] == "TERRORIST")
+            else if (teamSides[squidcupTeam2] == "TERRORIST")
             {
                 return CsTeam.Terrorist;
             }

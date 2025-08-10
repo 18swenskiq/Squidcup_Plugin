@@ -1,7 +1,7 @@
 using CounterStrikeSharp.API.Core;
 using System.Runtime.InteropServices;
 
-namespace MatchZy;
+namespace Squidcup;
 
 public static class Workshop
 {

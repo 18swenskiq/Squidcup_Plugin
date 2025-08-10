@@ -1,16 +1,16 @@
-MatchZy - Match Plugin for CS2!
+Squidcup - Match Plugin for CS2!
 ==============
 
-MatchZy is a plugin for CS2 (Counter Strike 2) for running and managing practice/pugs/scrims/matches with easy configuration!
+Squidcup is a plugin for CS2 (Counter Strike 2) for running and managing practice/pugs/scrims/matches with easy configuration!
 
 [![Discord](https://discordapp.com/api/guilds/1169549878490304574/widget.png?style=banner2)](https://discord.gg/2zvhy9m7qg)
 
 ## Feature Highlights:
 
 * Pug mode with simple commands to manage!
-* Support of [Get5 Panel!](https://shobhit-pathak.github.io/MatchZy/get5/)
+* Support of [Get5 Panel!](https://shobhit-pathak.github.io/Squidcup/get5/)
 * Support BO1/BO3/BO5 and Veto when using Match configuration or Get5 Panel!
-* [Setting up matches](https://shobhit-pathak.github.io/MatchZy/match_setup/) and locking players into their team
+* [Setting up matches](https://shobhit-pathak.github.io/Squidcup/match_setup/) and locking players into their team
 * Practice Mode with `.bot`, `.spawn`, `.ctspawn`, `.tspawn`, `.nobots`, `.rethrow`, `.last`, `.timer`, `.clear`, `.exitprac` and many more commands!
 * Knife round (With expected logic, i.e., team with most players win. If same number of players, then team with HP advantage wins. If same HP, winner is decided randomly)
 * Automatically starts demo recording and stop recording when match is ended (Make sure you have tv_enable 1)
@@ -20,14 +20,14 @@ MatchZy is a plugin for CS2 (Counter Strike 2) for running and managing practice
 * Damage report after every round
 * Support for round restore (Currently using the vanilla valve's backup system)
 * Ability to create admin and allowing them access to admin commands
-* Database Stats and CSV Stats! MatchZy stores data and stats of all the matches in a local SQLite database (MySQL Database is also supported!) and also creates a CSV file for detailed stats of every player in that match!
+* Database Stats and CSV Stats! Squidcup stores data and stats of all the matches in a local SQLite database (MySQL Database is also supported!) and also creates a CSV file for detailed stats of every player in that match!
 * Provides easy configuration
 * And much more!!
 
 
 ## Documentation
 
-## [shobhit-pathak.github.io/MatchZy/](https://shobhit-pathak.github.io/MatchZy/)
+## [shobhit-pathak.github.io/Squidcup/](https://shobhit-pathak.github.io/Squidcup/)
 
 ## Donation
 
@@ -39,10 +39,10 @@ Steam Tradelink:
 
 https://steamcommunity.com/tradeoffer/new/?partner=194101533&token=1TI76S3p
 
-## Want CS2 Server with MatchZy?
+## Want CS2 Server with Squidcup?
 
-Buy it from DatHost (MatchZy can be installed directly on DatHost servers by using their 1-click installer from mods and plugins section!):
-https://dathost.net/r/matchzy 
+Buy it from DatHost (Squidcup can be installed directly on DatHost servers by using their 1-click installer from mods and plugins section!):
+https://dathost.net/r/squidcup 
 
 ## License
 MIT

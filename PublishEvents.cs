@@ -2,11 +2,11 @@ using System.Text;
 using System.Text.Json;
 
 
-namespace MatchZy
+namespace Squidcup
 {
-    public partial class MatchZy
+    public partial class Squidcup
     {
-        public async Task SendEventAsync(MatchZyEvent @event)
+        public async Task SendEventAsync(SquidcupEvent @event)
         {
             try
             {

@@ -2,12 +2,12 @@ using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
 
-namespace MatchZy
+namespace Squidcup
 {
-    public partial class MatchZy
+    public partial class Squidcup
     {
         [ConsoleCommand("get5_remote_log_url", "If defined, all events are sent to this URL over HTTP. If no protocol is provided")]
-        [ConsoleCommand("matchzy_remote_log_url", "If defined, all events are sent to this URL over HTTP. If no protocol is provided")]
+        [ConsoleCommand("squidcup_remote_log_url", "If defined, all events are sent to this URL over HTTP. If no protocol is provided")]
         public void RemoteLogURLCommand(CCSPlayerController? player, CommandInfo command)
         {
             if (player != null) return;
@@ -23,7 +23,7 @@ namespace MatchZy
         }
 
         [ConsoleCommand("get5_remote_log_header_key", "If defined, a custom HTTP header with this name is added to the HTTP requests for events")]
-        [ConsoleCommand("matchzy_remote_log_header_key", "If defined, a custom HTTP header with this name is added to the HTTP requests for events")]
+        [ConsoleCommand("squidcup_remote_log_header_key", "If defined, a custom HTTP header with this name is added to the HTTP requests for events")]
         public void RemoteLogHeaderKeyCommand(CCSPlayerController? player, CommandInfo command)
         {
             if (player != null) return;
@@ -33,7 +33,7 @@ namespace MatchZy
         }
 
         [ConsoleCommand("get5_remote_log_header_value", "If defined, the value of the custom header added to the events sent over HTTP")]
-        [ConsoleCommand("matchzy_remote_log_header_value", "If defined, the value of the custom header added to the events sent over HTTP")]
+        [ConsoleCommand("squidcup_remote_log_header_value", "If defined, the value of the custom header added to the events sent over HTTP")]
         public void RemoteLogHeaderValueCommand(CCSPlayerController? player, CommandInfo command)
         {
             if (player != null) return;

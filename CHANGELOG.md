@@ -1,4 +1,4 @@
-# MatchZy Changelog
+# Squidcup Changelog
 
 # 0.8.10
 
@@ -19,7 +19,7 @@
 
 #### January 1, 2025
 
-- Fixed issue with !pause command where non-admin players were not able to take pauses when `matchzy_tech_pause_flag ""` was set.
+- Fixed issue with !pause command where non-admin players were not able to take pauses when `squidcup_tech_pause_flag ""` was set.
 
 # 0.8.7
 
@@ -27,7 +27,7 @@
 
 - Fixed backup / restore on Windows.
 - Dryrun will now have random competitive spawns rather than same spawns every time.
-- Made `.pause` / `.tech` toggleable. Use `matchzy_enable_tech_pause` convar to toggle.
+- Made `.pause` / `.tech` toggleable. Use `squidcup_enable_tech_pause` convar to toggle.
 - Updated pt-PT translation.
 - Fixed live_override
 
@@ -35,7 +35,7 @@
 
 #### September 13, 2024
 
-- Improvements in coach, now coaches will spawn on the fixed defined spawn to avoid spawning and getting stuck with the players. Spawns will be defined in `addons/counterstrikesharp/plugins/MatchZy/spawns/coach/<map_name>.json`. Each map will have its json file, in which there will be 2 keys, "3" and "2". 3 -> CT, 2 -> T and the values will be an array of Vector and QAngle objects.
+- Improvements in coach, now coaches will spawn on the fixed defined spawn to avoid spawning and getting stuck with the players. Spawns will be defined in `addons/counterstrikesharp/plugins/Squidcup/spawns/coach/<map_name>.json`. Each map will have its json file, in which there will be 2 keys, "3" and "2". 3 -> CT, 2 -> T and the values will be an array of Vector and QAngle objects.
 - Added `.showspawns` and `.hidespawns` command for Practice mode to toggle highlighting of competitive spawns. (Image attached)
 - Removed auto-join of players in match setup which was causing players to spawn under the ground.
 - Added `.rr` alias for `.restart` command.
@@ -44,9 +44,9 @@
 
 #### August 27, 2024
 
-- Added `matchzy_match_start_message` convar to configure message to show when the match starts. Use $$$ to break message into multiple lines.
+- Added `squidcup_match_start_message` convar to configure message to show when the match starts. Use $$$ to break message into multiple lines.
 - Some improvements and guard checks in coach system
-- Fixed `matchzy_hostname_format` not getting disabled on setting its value to ""
+- Fixed `squidcup_hostname_format` not getting disabled on setting its value to ""
 - Fixed winner side in `round_end` event
 
 # 0.8.4
@@ -74,14 +74,14 @@
 - Coaches will now be invisible, they will drop the bomb on the spawn if they get it and will die 1 second before freezetime ends.
 - If a match is loaded, player will directly join their respective team, skipping the join team menu.
 - Fixed a bug where loading a saved nade would make the player stuck.
-- Added `matchzy_stop_command_no_damage` convar to determine whether the stop command becomes unavailable if a player damages a player from the opposing team.
+- Added `squidcup_stop_command_no_damage` convar to determine whether the stop command becomes unavailable if a player damages a player from the opposing team.
 - `.map` command can now be used without "de_" prefix for maps. (Example: .map dust2)
 
 # 0.8.1
 
 #### August 17, 2024
 
-- Added matchzy_enable_damage_report convar to toggle damage report after every round.
+- Added squidcup_enable_damage_report convar to toggle damage report after every round.
 - Fixed bad demo name formatting.
 - Updated Uzbek translations.
 
@@ -89,9 +89,9 @@
 
 #### August 17, 2024
 
-- Improved backup and restore system. (Added matchzy_loadbackup and matchzy_loadbackup_url commands, now round backups will be stored in .json file in csgo/MatchZyDataBackup/ directory which will have valve backup and other match config data.)
-- Added matchzy_listbackups which lists all the backups for the provided matchid. By default lists backups of the current match.
-- Added matchzy_hostname_format for hostname formatting.
+- Improved backup and restore system. (Added squidcup_loadbackup and squidcup_loadbackup_url commands, now round backups will be stored in .json file in csgo/SquidcupDataBackup/ directory which will have valve backup and other match config data.)
+- Added squidcup_listbackups which lists all the backups for the provided matchid. By default lists backups of the current match.
+- Added squidcup_hostname_format for hostname formatting.
 - Improved player color smokes in practice mode
 - Fixed .last grenade's player rotation
 - Added switching of maps without adding de_ prefix (using .map command)
@@ -115,7 +115,7 @@
 #### June 27, 2024
 
 - Removed unused cvars from cfgs which were causing the server to crash with the new CS# versions.
-- Added MatchZyOnDemoUploadEnded Event ater demo is uploaded
+- Added SquidcupOnDemoUploadEnded Event ater demo is uploaded
 - Fixed SendEventAsync Post failing when header is not empty with empty value
 - Fixed decoy message localization id
 - Made MatchID as int
@@ -126,7 +126,7 @@
 
 - Improved `.help` command with better readability and updated commands
 - Fixed overtime getting automatically enabled even if turned off in `live.cfg`
-- Added `matchzy_show_credits_on_match_start` config convar to toggle 'MatchZy Plugin by WD-' message on match start.
+- Added `squidcup_show_credits_on_match_start` config convar to toggle 'Squidcup Plugin by WD-' message on match start.
 - Added gradient while printing `KNIFE!` and `LIVE!` message.
 - Added `.pip` alias for `.traj` command to toggle `sv_grenade_trajectory_prac_pipreview` in practice mode.
 
@@ -134,7 +134,7 @@
 
 #### May 19, 2024
 
-- Added `matchzy_smoke_color_enabled` config convar for practice mode which changes the smoke's color to player's team color (player's color seen in the radar)
+- Added `squidcup_smoke_color_enabled` config convar for practice mode which changes the smoke's color to player's team color (player's color seen in the radar)
 - Added `.bestspawn` command which teleports you to your team's closest spawn from your current position
 - Added `.worstspawn` command which teleports you to your team's furthest spawn from your current position
 - Added `.bestctspawn` command which teleports you to CT team's closest spawn from your current position
@@ -180,14 +180,14 @@
 
 - Added remaining strings available for translation.
 - Fixed force-unpause command not working in knife round.
-- Fixed `cfg` folder not available in Windows build of MatchZy with CSSharp.
+- Fixed `cfg` folder not available in Windows build of Squidcup with CSSharp.
 
 # 0.7.5
 
 #### April 27, 2024
 
 - Upgraded CounterStrikeSharp to v217
-- Fixed CFG execution on Map Start (After the latest update, CFGs were getting overriden by gamemodes cfg. Hence, added a timer to delay MatchZy's CFG execution on MapStart)
+- Fixed CFG execution on Map Start (After the latest update, CFGs were getting overriden by gamemodes cfg. Hence, added a timer to delay Squidcup's CFG execution on MapStart)
 - Fixed BO2 setup, now Get5 server will be freed once the BO2 match is over
 
 # 0.7.4
@@ -233,7 +233,7 @@
 
 **Translation**
 
-- Added translation/multi-lingual support in MatchZy. Currently only match related strings are added in the translation. There will be a folder called `lang` in which translation JSONs will be present. Currently we have the translations for English and Russian (thanks to @innuendo-code). To add more languages, create a JSON file with the language locale code (like `en.json` or `fr.json`, etc). Contribution for translations are much appreciated! :D
+- Added translation/multi-lingual support in Squidcup. Currently only match related strings are added in the translation. There will be a folder called `lang` in which translation JSONs will be present. Currently we have the translations for English and Russian (thanks to @innuendo-code). To add more languages, create a JSON file with the language locale code (like `en.json` or `fr.json`, etc). Contribution for translations are much appreciated! :D
 
 **Practice Mode/Match Mode**
 
@@ -245,7 +245,7 @@
 
 **Admin**
 
-- Added a convar `matchzy_everyone_is_admin`, if set to `true`, all the players will be granted admin privileges for MatchZy commands. 
+- Added a convar `squidcup_everyone_is_admin`, if set to `true`, all the players will be granted admin privileges for Squidcup commands. 
 
 **CSSharp**
 
@@ -281,18 +281,18 @@
 
 #### Dec 27, 2023
 
-- Added DryRun mode for Practice Mode. Use `.dryrun` while in practice mode to activate dryrun! Also added `dryrun.cfg` in `cfg/MatchZy/dryrun.cfg` which can be modified as per your requirements
+- Added DryRun mode for Practice Mode. Use `.dryrun` while in practice mode to activate dryrun! Also added `dryrun.cfg` in `cfg/Squidcup/dryrun.cfg` which can be modified as per your requirements
 - Added `.noflash` command in Practice Mode which will make the user immune to flashbangs. Use `.noflash` again to disable noflash.
 - Added `.break` command in Practice Mode which will break all the breakable entities like glass windows, wooden doors, vents, etc
-- Added `matchzy_demo_name_format` which will allow to set demo name as per the requirement. Default: `{TIME}_{MATCH_ID}_{MAP}_{TEAM1}_{TEAM2}` [Read More](https://shobhit-pathak.github.io/MatchZy/configuration/#matchzy_demo_name_format)
+- Added `squidcup_demo_name_format` which will allow to set demo name as per the requirement. Default: `{TIME}_{MATCH_ID}_{MAP}_{TEAM1}_{TEAM2}` [Read More](https://shobhit-pathak.github.io/Squidcup/configuration/#squidcup_demo_name_format)
 - Fixed players able to use `.tac` even after tactical timeouts were exhausted.
 
 # 0.6.0-alpha
 
 #### Dec 14, 2023
 
-- Added support for Get5 Web panel! (G5V and G5API) (Read more at: https://shobhit-pathak.github.io/MatchZy/get5/)
-What can Get5 Web Panel + MatchZy can do?
+- Added support for Get5 Web panel! (G5V and G5API) (Read more at: https://shobhit-pathak.github.io/Squidcup/get5/)
+What can Get5 Web Panel + Squidcup can do?
 
 1. Create teams and setup matches from web panel
 2. Support for BO1, BO3, BO5, etc with Veto and Knife Round
@@ -309,24 +309,24 @@ What can Get5 Web Panel + MatchZy can do?
 - Added `.boost`, `.crouchboost`, `.crouchbot` commands in Practice Mode to spawn Bot/Crouched bot and boost on it.
 - Added `.ct`, `.t`, and `.spec` command in Practice Mode to switch the player in requested team
 - Added `.fas` and `.watchme` command in Practice Mode which forces all players into spectator except the player who called this command
-- Added `matchzy_autostart_mode` command for default launch mode of the plugin (0 for neither/sleep mode, 1 for match mode, 2 for practice mode. Default: 1)
-- Added `matchzy_save_nades_as_global_enabled` config convar to save nades globally
-- Added `matchzy_use_pause_command_for_tactical_pause` config convar to use `!pause` command as tactical pause
+- Added `squidcup_autostart_mode` command for default launch mode of the plugin (0 for neither/sleep mode, 1 for match mode, 2 for practice mode. Default: 1)
+- Added `squidcup_save_nades_as_global_enabled` config convar to save nades globally
+- Added `squidcup_use_pause_command_for_tactical_pause` config convar to use `!pause` command as tactical pause
 - Renamed `.knife` command to `.roundknife` and added `.rk` alias to resolve conflict with `.knife` command of other plugins
 - Fixed tactical timeout force-unpausing the match on timeout end
-- Fixed `matchzy_minimum_ready_required 0` not working properly on server startup
+- Fixed `squidcup_minimum_ready_required 0` not working properly on server startup
 - Made `spectator` key in match setup config optional field
 
 # 0.5.0-alpha
 
 #### Dec 6, 2023
 
-- Matches can now be setup using JSON file! This includes locking players to their correct team and side, setting the map(s) and configuring the game rules. Added `matchzy_loadmatch <filepath>` and `matchzy_loadmatch_url "<url>"` commands (read more at https://shobhit-pathak.github.io/MatchZy/match_setup/)
-- Demos can now be uploaded to a URL once the map and recording ends. Command to setup the upload URL: `matchzy_demo_upload_url "<url>"` (read more at https://shobhit-pathak.github.io/MatchZy/gotv/#automatic-upload)
+- Matches can now be setup using JSON file! This includes locking players to their correct team and side, setting the map(s) and configuring the game rules. Added `squidcup_loadmatch <filepath>` and `squidcup_loadmatch_url "<url>"` commands (read more at https://shobhit-pathak.github.io/Squidcup/match_setup/)
+- Demos can now be uploaded to a URL once the map and recording ends. Command to setup the upload URL: `squidcup_demo_upload_url "<url>"` (read more at https://shobhit-pathak.github.io/Squidcup/gotv/#automatic-upload)
 - Removed map reload on map end to avoid any issues
 - Fixed issues while restoring round during halftime
 - Fixed lag on round end which was due to pushing stats into the database. Now that operation is async!
-- This one is not related to the working of the plugin, but we have a new documentation page! https://shobhit-pathak.github.io/MatchZy/
+- This one is not related to the working of the plugin, but we have a new documentation page! https://shobhit-pathak.github.io/Squidcup/
 
 # 0.4.3-alpha
 
@@ -344,8 +344,8 @@ Flag-wise permissions:
   - `@css/chat`: Grants access to send admin chat messages using `!asay <message>`
 
 - Added `.forcepause` and `.forceunpause` commands for admins so that they can use `.pause` and `.unpause` as a player while playing (Use `.fp` and `.fup` for shorter commands)
-- Added `.playout` commands to toggle Playout! (If playout is enabled, all rounds would be played irrespective of winner. Useful in scrims!). Also added `matchzy_playout_enabled_default` command to enable/disable playout by default. Default: `matchzy_playout_enabled_default false`
--  Added `matchzy_admin_chat_prefix` command to configure admin chat prefix when using `.asay <message>`. Default: `matchzy_admin_chat_prefix [{Red}ADMIN{Default}]`
+- Added `.playout` commands to toggle Playout! (If playout is enabled, all rounds would be played irrespective of winner. Useful in scrims!). Also added `squidcup_playout_enabled_default` command to enable/disable playout by default. Default: `squidcup_playout_enabled_default false`
+-  Added `squidcup_admin_chat_prefix` command to configure admin chat prefix when using `.asay <message>`. Default: `squidcup_admin_chat_prefix [{Red}ADMIN{Default}]`
 - Added `.help` command to list all the available commands during that match phase
 - Rounded off blind duration in practice mode to 2 decimal places.
 - Added damage report for bot in practice mode (for every hit, similar to Get5 practice mode)
@@ -357,7 +357,7 @@ Flag-wise permissions:
 
 #### Nov 21, 2023
 
-- MatchZy now supports CSSharp's admin system!
+- Squidcup now supports CSSharp's admin system!
 You can create a new entry in the `/addons/counterstrikesharp/configs/admins.json` file with `@css/generic` generic flag like mentioned in the below example:
 ```
 {
@@ -376,7 +376,7 @@ You can create a new entry in the `/addons/counterstrikesharp/configs/admins.jso
 }
 ```
 
-To maintain backwards compatibility, we still support creating admins using older method (by adding entries in `csgo/cfg/MatchZy/admins.json`), so you can choose the most convenient method according to your preference.
+To maintain backwards compatibility, we still support creating admins using older method (by adding entries in `csgo/cfg/Squidcup/admins.json`), so you can choose the most convenient method according to your preference.
 
 # 0.4.1-alpha
 
@@ -390,13 +390,13 @@ To maintain backwards compatibility, we still support creating admins using olde
 #### Nov 17, 2023
 
 - Coach system! `.coach <side>` Starts coaching the specified side. Example: `.coach t` to start coaching terrorist side!
-- MySQL Database is now supported! Now same DB can be used with multiple servers! Configure `csgo/cfg/MatchZy/database.json` according to your need!
+- MySQL Database is now supported! Now same DB can be used with multiple servers! Configure `csgo/cfg/Squidcup/database.json` according to your need!
 - `.spawn` command now uses competitive spawns!
-- Many commands added in Practice mode: `.clear`, `.fastforward`, `.god`, `.savenade <name> <optional description>`, `.loadnade <name>`, `.deletenade <name>`, `.importnade <code>`, `.listnades <optional filter>` (Refer to [Readme](https://github.com/shobhit-pathak/MatchZy#practice-mode-commands) for their descriptions!)
+- Many commands added in Practice mode: `.clear`, `.fastforward`, `.god`, `.savenade <name> <optional description>`, `.loadnade <name>`, `.deletenade <name>`, `.importnade <code>`, `.listnades <optional filter>` (Refer to [Readme](https://github.com/shobhit-pathak/Squidcup#practice-mode-commands) for their descriptions!)
 - Added text message for showing blind duration by a flashbang in practice session!
 - Damage report will now be shown for every opponent player (even if damage is not dealt!)
 
-![pracrelease](https://github.com/shobhit-pathak/MatchZy/assets/140690706/533b4d4b-7f09-48ec-a16e-3c6c9a8cb591)
+![pracrelease](https://github.com/shobhit-pathak/Squidcup/assets/140690706/533b4d4b-7f09-48ec-a16e-3c6c9a8cb591)
 
 # 0.3.0-alpha
 
@@ -405,16 +405,16 @@ To maintain backwards compatibility, we still support creating admins using olde
 - Team names can now be configured using `!team1 <teamname>` and `!team2 <teamname>` command. The same will be stored in Database and CSV.
 - If team names are not configured, it will be configured automatically by picking a player's name randomly from both the teams (For example, if there is a player `WD-`, their teamname will be set to `team_WD-`)
 - Damage report in chat will be shown on round end (similar to Faceit!)
-- Chat timer delay can now be configured using `matchzy_chat_messages_timer_delay`. Example: `matchzy_chat_messages_timer_delay 12` 
-- Players can be whitelisted by adding their steam64id in `cfg/MatchZy/whitelist.cfg`. Whitelisting is a toggleable feature and can be enabled using `.whitelist`. To enable it by default, set `matchzy_whitelist_enabled_default true` in `cfg/MatchZy/config.cfg`
+- Chat timer delay can now be configured using `squidcup_chat_messages_timer_delay`. Example: `squidcup_chat_messages_timer_delay 12` 
+- Players can be whitelisted by adding their steam64id in `cfg/Squidcup/whitelist.cfg`. Whitelisting is a toggleable feature and can be enabled using `.whitelist`. To enable it by default, set `squidcup_whitelist_enabled_default true` in `cfg/Squidcup/config.cfg`
 
-![image](https://github.com/shobhit-pathak/MatchZy/assets/140690706/85b64823-419c-41d2-850d-d8f88fa4a4ca)
+![image](https://github.com/shobhit-pathak/Squidcup/assets/140690706/85b64823-419c-41d2-850d-d8f88fa4a4ca)
 
 # 0.2.0-alpha
 
 #### Nov 5, 2023
 
 - Practice mode added ( with `.bot`, `.spawn`, `.ctspawn`, `.tspawn`, `.nobots` and `.exitprac` commands!)
-- Chat prefixes can now be configured using `matchzy_chat_prefix`. Example: `matchzy_chat_prefix [{Green}MatchZy{Default}]` (More details related to colors is present in readme and `config.cfg`)
+- Chat prefixes can now be configured using `squidcup_chat_prefix`. Example: `squidcup_chat_prefix [{Green}Squidcup{Default}]` (More details related to colors is present in readme and `config.cfg`)
 - Added RCON command via chat! Now admins can use `!rcon <command>` in chat to trigger a command to the server!
 - Fixed some bugs related to Demo recording and match pause when match was restarted using `.restart`

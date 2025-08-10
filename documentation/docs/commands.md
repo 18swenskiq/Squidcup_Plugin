@@ -4,7 +4,7 @@ Most of the commands can also be used using ! prefix instead of . (like !ready)
 - `.ready` Marks the player ready (Alias: `.r`)
 - `.unready` Marks the player unready (Alias: `.ur`, `.notready`)
 - `.forceready` Force-readies the player's team (Only works when using Match setup using JSON/Get5)
-- `.pause` Pauses the match in freezetime (Tactical or normal pause, depends on `matchzy_use_pause_command_for_tactical_pause`).
+- `.pause` Pauses the match in freezetime (Tactical or normal pause, depends on `squidcup_use_pause_command_for_tactical_pause`).
 - `.tech` Pauses the match in freezetime.
 - `.unpause` Request for unpausing the match. Both teams need to type .unpause to unpause the match
 - `.stay` Stays on the same side (For knife winner, after the knife round)
@@ -71,7 +71,7 @@ Most of the commands can also be used using ! prefix instead of . (like !ready)
 - `.skipveto` / `.sv` Skips the current veto phase.
 - `.roundknife` / `.rk` Toggles the knife round. If disabled, match will directly go from Warmup phase to Live phase.
 - `.playout` Toggles playout (If playout is enabled, all rounds would be played irrespective of winner. Useful in scrims!)
-- `.whitelist` Toggles whitelisting of players. To whitelist a player, add the steam64id in `cfg/MatchZy/whitelist.cfg`
+- `.whitelist` Toggles whitelisting of players. To whitelist a player, add the steam64id in `cfg/Squidcup/whitelist.cfg`
 - `.readyrequired <number>` Sets the number of ready players required to start the match. If set to 0, all connected players will have to ready-up to start the match.
 - `.settings` Displays the current setting, like whether knife is enabled or not, value of readyrequired  players, etc.
 - `.map <mapname>` Changes the map

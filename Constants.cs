@@ -1,4 +1,4 @@
-namespace MatchZy;
+namespace Squidcup;
 
 class Constants
 {

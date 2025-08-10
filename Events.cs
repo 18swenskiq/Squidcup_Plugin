@@ -1,9 +1,9 @@
 using System.Text.Json.Serialization;
 
-namespace MatchZy;
-public class MatchZyEvent
+namespace Squidcup;
+public class SquidcupEvent
 {
-    public MatchZyEvent(string eventName)
+    public SquidcupEvent(string eventName)
     {
         EventName = eventName;
     }
@@ -12,114 +12,114 @@ public class MatchZyEvent
     public string EventName { get; }
 }
 
-public class MatchZyMatchEvent : MatchZyEvent
+public class SquidcupMatchEvent : SquidcupEvent
 {
     [JsonPropertyName("matchid")]
     public required long MatchId { get; init; }
 
-    protected MatchZyMatchEvent(string eventName) : base(eventName)
+    protected SquidcupMatchEvent(string eventName) : base(eventName)
     {
     }
 }
 
-public class MatchZyMatchTeamEvent : MatchZyMatchEvent
+public class SquidcupMatchTeamEvent : SquidcupMatchEvent
 {
     [JsonPropertyName("team")]
     public required string Team { get; init; }
 
-    protected MatchZyMatchTeamEvent(string eventName) : base(eventName)
+    protected SquidcupMatchTeamEvent(string eventName) : base(eventName)
     {
     }
 }
 
-public class MatchZyMapEvent : MatchZyMatchEvent
+public class SquidcupMapEvent : SquidcupMatchEvent
 {
     [JsonPropertyName("map_number")]
     public required int MapNumber { get; init; }
 
-    protected MatchZyMapEvent(string eventName) : base(eventName)
+    protected SquidcupMapEvent(string eventName) : base(eventName)
     {
     }
 }
 
-public class MatchZyMapTeamEvent : MatchZyMapEvent
+public class SquidcupMapTeamEvent : SquidcupMapEvent
 {
     [JsonPropertyName("team_int")]
     public required int TeamNumber { get; init; }
 
-    protected MatchZyMapTeamEvent(string eventName) : base(eventName)
+    protected SquidcupMapTeamEvent(string eventName) : base(eventName)
     {
     }
 }
 
-public class MatchZyRoundEvent : MatchZyMapEvent
+public class SquidcupRoundEvent : SquidcupMapEvent
 {
     [JsonPropertyName("round_number")]
     public required int RoundNumber { get; init; }
 
-    protected MatchZyRoundEvent(string eventName) : base(eventName)
+    protected SquidcupRoundEvent(string eventName) : base(eventName)
     {
     }
 }
 
-public class MatchZyTimedRoundEvent : MatchZyRoundEvent
+public class SquidcupTimedRoundEvent : SquidcupRoundEvent
 {
     [JsonPropertyName("round_time")]
     public required int RoundTime { get; init; }
 
-    protected MatchZyTimedRoundEvent(string eventName) : base(eventName)
+    protected SquidcupTimedRoundEvent(string eventName) : base(eventName)
     {
     }
 }
 
-public class MatchZyPlayerRoundEvent : MatchZyRoundEvent
+public class SquidcupPlayerRoundEvent : SquidcupRoundEvent
 {
 
     [JsonPropertyName("player")]
     public required int Player { get; init; }
 
-    protected MatchZyPlayerRoundEvent(string eventName) : base(eventName)
+    protected SquidcupPlayerRoundEvent(string eventName) : base(eventName)
     {
     }
 }
 
-public class MatchZyPlayerTimedRoundEvent : MatchZyTimedRoundEvent
+public class SquidcupPlayerTimedRoundEvent : SquidcupTimedRoundEvent
 {
     [JsonPropertyName("player")]
     public required int Player { get; init; }
 
-    protected MatchZyPlayerTimedRoundEvent(string eventName) : base(eventName)
+    protected SquidcupPlayerTimedRoundEvent(string eventName) : base(eventName)
     {
     }
 }
 
-public class MatchZyPlayerDisconnectedEvent : MatchZyMatchEvent
+public class SquidcupPlayerDisconnectedEvent : SquidcupMatchEvent
 {
     [JsonPropertyName("player")]
     public required int Player { get; init; }
 
-    public MatchZyPlayerDisconnectedEvent() : base("player_disconnect")
+    public SquidcupPlayerDisconnectedEvent() : base("player_disconnect")
     {
     }
 }
 
-public class MatchZySeriesStartedEvent : MatchZyMatchEvent
+public class SquidcupSeriesStartedEvent : SquidcupMatchEvent
 {
     [JsonPropertyName("team1")]
-    public required MatchZyTeamWrapper Team1 { get; init; }
+    public required SquidcupTeamWrapper Team1 { get; init; }
 
     [JsonPropertyName("team2")]
-    public required MatchZyTeamWrapper Team2 { get; init; }
+    public required SquidcupTeamWrapper Team2 { get; init; }
 
     [JsonPropertyName("num_maps")]
     public required int NumberOfMaps { get; init; }
 
-    public MatchZySeriesStartedEvent() : base("series_start")
+    public SquidcupSeriesStartedEvent() : base("series_start")
     {
     }
 }
 
-public class MatchZySeriesResultEvent : MatchZyMatchEvent
+public class SquidcupSeriesResultEvent : SquidcupMatchEvent
 {
     [JsonPropertyName("time_until_restore")]
     public required int TimeUntilRestore { get; init; }
@@ -133,19 +133,19 @@ public class MatchZySeriesResultEvent : MatchZyMatchEvent
     [JsonPropertyName("team2_series_score")]
     public required int Team2SeriesScore { get; init; }
 
-    public MatchZySeriesResultEvent() : base("series_end")
+    public SquidcupSeriesResultEvent() : base("series_end")
     {
     }
 }
 
-public class GoingLiveEvent : MatchZyMapEvent
+public class GoingLiveEvent : SquidcupMapEvent
 {
     public GoingLiveEvent() : base("going_live")
     {
     }
 }
 
-public class MatchZyRoundEndedEvent : MatchZyTimedRoundEvent
+public class SquidcupRoundEndedEvent : SquidcupTimedRoundEvent
 {
 
     [JsonPropertyName("reason")]
@@ -155,60 +155,60 @@ public class MatchZyRoundEndedEvent : MatchZyTimedRoundEvent
     public required Winner Winner { get; init; }
 
     [JsonPropertyName("team1")]
-    public required MatchZyStatsTeam StatsTeam1 { get; init; }
+    public required SquidcupStatsTeam StatsTeam1 { get; init; }
 
     [JsonPropertyName("team2")]
-    public required MatchZyStatsTeam StatsTeam2 { get; init; }
+    public required SquidcupStatsTeam StatsTeam2 { get; init; }
 
-    public MatchZyRoundEndedEvent() : base("round_end")
+    public SquidcupRoundEndedEvent() : base("round_end")
     {
     }
 }
 
-public class MapResultEvent : MatchZyMapEvent
+public class MapResultEvent : SquidcupMapEvent
 {
     [JsonPropertyName("winner")]
     public required Winner Winner { get; init; }
 
     [JsonPropertyName("team1")]
-    public required MatchZyStatsTeam StatsTeam1 { get; init; }
+    public required SquidcupStatsTeam StatsTeam1 { get; init; }
 
     [JsonPropertyName("team2")]
-    public required MatchZyStatsTeam StatsTeam2 { get; init; }
+    public required SquidcupStatsTeam StatsTeam2 { get; init; }
 
     public MapResultEvent() : base("map_result")
     {
     }
 }
 
-public class MatchZyMapSelectionEvent : MatchZyMatchTeamEvent
+public class SquidcupMapSelectionEvent : SquidcupMatchTeamEvent
 {
     [JsonPropertyName("map_name")]
     public required string MapName { get; init; }
 
-    protected MatchZyMapSelectionEvent(string eventName) : base(eventName)
+    protected SquidcupMapSelectionEvent(string eventName) : base(eventName)
     {
     }
 }
 
-public class MatchZyMapPickedEvent : MatchZyMapSelectionEvent
+public class SquidcupMapPickedEvent : SquidcupMapSelectionEvent
 {
     [JsonPropertyName("map_number")]
     public required int MapNumber { get; init; }
 
-    public MatchZyMapPickedEvent() : base("map_picked")
+    public SquidcupMapPickedEvent() : base("map_picked")
     {
     }
 }
 
-public class MatchZyMapVetoedEvent : MatchZyMapSelectionEvent
+public class SquidcupMapVetoedEvent : SquidcupMapSelectionEvent
 {
-    public MatchZyMapVetoedEvent() : base("map_vetoed")
+    public SquidcupMapVetoedEvent() : base("map_vetoed")
     {
     }
 }
 
-public class MatchZySidePickedEvent : MatchZyMapSelectionEvent
+public class SquidcupSidePickedEvent : SquidcupMapSelectionEvent
 {
     [JsonPropertyName("map_number")]
     public required int MapNumber { get; init; }
@@ -216,12 +216,12 @@ public class MatchZySidePickedEvent : MatchZyMapSelectionEvent
     [JsonPropertyName("side")]
     public required string Side { get; init; }
 
-    public MatchZySidePickedEvent() : base("side_picked")
+    public SquidcupSidePickedEvent() : base("side_picked")
     {
     }
 }
 
-public class MatchZyDemoUploadedEvent : MatchZyMatchEvent
+public class SquidcupDemoUploadedEvent : SquidcupMatchEvent
 {
     [JsonPropertyName("map_number")]
     public required int MapNumber { get; init; }
@@ -232,7 +232,7 @@ public class MatchZyDemoUploadedEvent : MatchZyMatchEvent
     [JsonPropertyName("success")]
     public bool Success { get; set; }
 
-    public MatchZyDemoUploadedEvent() : base("demo_upload_ended")
+    public SquidcupDemoUploadedEvent() : base("demo_upload_ended")
     {
     }
 }

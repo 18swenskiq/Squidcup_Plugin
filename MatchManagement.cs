@@ -8,10 +8,10 @@ using CounterStrikeSharp.API.Modules.Utils;
 using Newtonsoft.Json.Linq;
 
 
-namespace MatchZy
+namespace Squidcup
 {
 
-    public partial class MatchZy
+    public partial class Squidcup
     {
         public MatchConfig matchConfig = new();
 
@@ -23,10 +23,10 @@ namespace MatchZy
 
         public string loadedConfigFile = "";
 
-        public Team matchzyTeam1 = new() {
+        public Team squidcupTeam1 = new() {
             teamName = "COUNTER-TERRORISTS"
         };
-        public Team matchzyTeam2 = new() {
+        public Team squidcupTeam2 = new() {
             teamName = "TERRORISTS"
         };
 
@@ -43,7 +43,7 @@ namespace MatchZy
             HandleTeamNameChangeCommand(player, command.ArgString, 2);
         }
 
-        [ConsoleCommand("matchzy_loadmatch", "Loads a match from the given JSON file path (relative to the csgo/ directory)")]
+        [ConsoleCommand("squidcup_loadmatch", "Loads a match from the given JSON file path (relative to the csgo/ directory)")]
         public void LoadMatch(CCSPlayerController? player, CommandInfo command)
         {
             try
@@ -52,7 +52,7 @@ namespace MatchZy
                 if (isMatchSetup)
                 {
                     // command.ReplyToCommand($"[LoadMatch] A match is already setup with id: {liveMatchId}, cannot load a new match!");
-                    ReplyToUserCommand(player, Localizer["matchzy.mm.matchisalreadysetup", liveMatchId]);
+                    ReplyToUserCommand(player, Localizer["squidcup.mm.matchisalreadysetup", liveMatchId]);
                     Log($"[LoadMatch] A match is already setup with id: {liveMatchId}, cannot load a new match!");
                     return;
                 }
@@ -60,9 +60,9 @@ namespace MatchZy
                 string filePath = Path.Join(Server.GameDirectory + "/csgo", fileName);
                 if (!File.Exists(filePath)) 
                 {
-                    // command.ReplyToCommand($"[LoadMatch] Provided file does not exist! Usage: matchzy_loadmatch <filename>");
-                    ReplyToUserCommand(player, Localizer["matchzy.mm.filedoesntexist"]);
-                    Log($"[LoadMatch] Provided file does not exist! Usage: matchzy_loadmatch <filename>");
+                    // command.ReplyToCommand($"[LoadMatch] Provided file does not exist! Usage: squidcup_loadmatch <filename>");
+                    ReplyToUserCommand(player, Localizer["squidcup.mm.filedoesntexist"]);
+                    Log($"[LoadMatch] Provided file does not exist! Usage: squidcup_loadmatch <filename>");
                     return;
                 }
                 string jsonData = File.ReadAllText(filePath);
@@ -70,7 +70,7 @@ namespace MatchZy
                 if (!success)
                 {
                     // command.ReplyToCommand("Match load failed! Resetting current match");
-                    ReplyToUserCommand(player, Localizer["matchzy.mm.matchloadfailed"]);
+                    ReplyToUserCommand(player, Localizer["squidcup.mm.matchloadfailed"]);
                     ResetMatch();
                 }
                 loadedConfigFile = fileName;
@@ -83,14 +83,14 @@ namespace MatchZy
         }
 
         [ConsoleCommand("get5_loadmatch_url", "Loads a match from the given URL")]
-        [ConsoleCommand("matchzy_loadmatch_url", "Loads a match from the given URL")]
+        [ConsoleCommand("squidcup_loadmatch_url", "Loads a match from the given URL")]
         public void LoadMatchFromURL(CCSPlayerController? player, CommandInfo command)
         {
             if (player != null) return;
             if (isMatchSetup)
             {
                 // command.ReplyToCommand($"[LoadMatchDataCommand] A match is already setup with id: {liveMatchId}, cannot load a new match!");
-                ReplyToUserCommand(player, Localizer["matchzy.mm.get5matchisalreadysetup", liveMatchId]);
+                ReplyToUserCommand(player, Localizer["squidcup.mm.get5matchisalreadysetup", liveMatchId]);
                 Log($"[LoadMatchDataCommand] A match is already setup with id: {liveMatchId}, cannot load a new match!");
                 return;
             }
@@ -104,7 +104,7 @@ namespace MatchZy
             if (!IsValidUrl(url))
             {
                 // command.ReplyToCommand($"[LoadMatchDataCommand] Invalid URL: {url}. Please provide a valid URL to load the match!");
-                ReplyToUserCommand(player, Localizer["matchzy.mm.invalidurl", url]);
+                ReplyToUserCommand(player, Localizer["squidcup.mm.invalidurl", url]);
                 Log($"[LoadMatchDataCommand] Invalid URL: {url}. Please provide a valid URL to load the match!");
                 return;
             }
@@ -126,7 +126,7 @@ namespace MatchZy
                     if (!success)
                     {
                         // command.ReplyToCommand("Match load failed! Resetting current match");
-                        ReplyToUserCommand(player, Localizer["matchzy.mm.matchloadfailed"]);
+                        ReplyToUserCommand(player, Localizer["squidcup.mm.matchloadfailed"]);
                         ResetMatch();
                     }
                     loadedConfigFile = url;
@@ -134,7 +134,7 @@ namespace MatchZy
                 else
                 {
                     // command.ReplyToCommand($"[LoadMatchFromURL] HTTP request failed with status code: {response.StatusCode}");
-                    ReplyToUserCommand(player, Localizer["matchzy.mm.httprequestfailed", response.StatusCode]);
+                    ReplyToUserCommand(player, Localizer["squidcup.mm.httprequestfailed", response.StatusCode]);
                     Log($"[LoadMatchFromURL] HTTP request failed with status code: {response.StatusCode}");
                 }
             }
@@ -272,13 +272,13 @@ namespace MatchZy
             JToken team2 = jsonDataObject["team2"]!;
             JToken maplist = jsonDataObject["maplist"]!;
 
-            if (team1["id"] != null) matchzyTeam1.id = team1["id"]!.ToString();
-            if (team2["id"] != null) matchzyTeam2.id = team2["id"]!.ToString();
+            if (team1["id"] != null) squidcupTeam1.id = team1["id"]!.ToString();
+            if (team2["id"] != null) squidcupTeam2.id = team2["id"]!.ToString();
 
-            matchzyTeam1.teamName = RemoveSpecialCharacters(team1["name"]!.ToString());
-            matchzyTeam2.teamName = RemoveSpecialCharacters(team2["name"]!.ToString());
-            matchzyTeam1.teamPlayers = team1["players"];
-            matchzyTeam2.teamPlayers = team2["players"];
+            squidcupTeam1.teamName = RemoveSpecialCharacters(team1["name"]!.ToString());
+            squidcupTeam2.teamName = RemoveSpecialCharacters(team2["name"]!.ToString());
+            squidcupTeam1.teamPlayers = team1["players"];
+            squidcupTeam2.teamPlayers = team2["players"];
 
             matchConfig = new()
             {
@@ -368,12 +368,12 @@ namespace MatchZy
             UpdatePlayersMap();
             UpdateHostname();
 
-            var seriesStartedEvent = new MatchZySeriesStartedEvent
+            var seriesStartedEvent = new SquidcupSeriesStartedEvent
             {
                 MatchId = liveMatchId,
                 NumberOfMaps = matchConfig.NumMaps,
-                Team1 = new(matchzyTeam1.id, matchzyTeam1.teamName),
-                Team2 = new(matchzyTeam2.id, matchzyTeam2.teamName),
+                Team1 = new(squidcupTeam1.id, squidcupTeam1.teamName),
+                Team2 = new(squidcupTeam2.id, squidcupTeam2.teamName),
             };
 
             Task.Run(async () => {
@@ -388,18 +388,18 @@ namespace MatchZy
             int mapNumber = matchConfig.CurrentMapNumber;
             if (matchConfig.MapSides[mapNumber] == "team1_ct" || matchConfig.MapSides[mapNumber] == "team2_t")
             {
-                teamSides[matchzyTeam1] = "CT";
-                teamSides[matchzyTeam2] = "TERRORIST";
-                reverseTeamSides["CT"] = matchzyTeam1;
-                reverseTeamSides["TERRORIST"] = matchzyTeam2;
+                teamSides[squidcupTeam1] = "CT";
+                teamSides[squidcupTeam2] = "TERRORIST";
+                reverseTeamSides["CT"] = squidcupTeam1;
+                reverseTeamSides["TERRORIST"] = squidcupTeam2;
                 isKnifeRequired = false;
             }
             else if (matchConfig.MapSides[mapNumber] == "team2_ct" || matchConfig.MapSides[mapNumber] == "team1_t")
             {
-                teamSides[matchzyTeam2] = "CT";
-                teamSides[matchzyTeam1] = "TERRORIST";
-                reverseTeamSides["CT"] = matchzyTeam2;
-                reverseTeamSides["TERRORIST"] = matchzyTeam1;
+                teamSides[squidcupTeam2] = "CT";
+                teamSides[squidcupTeam1] = "TERRORIST";
+                reverseTeamSides["CT"] = squidcupTeam2;
+                reverseTeamSides["TERRORIST"] = squidcupTeam1;
                 isKnifeRequired = false;
             }
             else if (matchConfig.MapSides[mapNumber] == "knife")
@@ -499,30 +499,30 @@ namespace MatchZy
             }
             if (matchStarted) {
                 // ReplyToUserCommand(player, "Team names cannot be changed once the match is started!");
-                ReplyToUserCommand(player, Localizer["matchzy.mm.teamcannotbechanged"]);
+                ReplyToUserCommand(player, Localizer["squidcup.mm.teamcannotbechanged"]);
                 return;
             }
             teamName = RemoveSpecialCharacters(teamName.Trim());
             if (teamName == "") {
                 // ReplyToUserCommand(player, $"Usage: !team{teamNum} <name>");
-                ReplyToUserCommand(player, Localizer["matchzy.cc.usage", $"!team{teamNum} <name>"]);
+                ReplyToUserCommand(player, Localizer["squidcup.cc.usage", $"!team{teamNum} <name>"]);
             }
 
             if (teamNum == 1) {
-                matchzyTeam1.teamName = teamName;
-                teamSides[matchzyTeam1] = "CT";
-                reverseTeamSides["CT"] = matchzyTeam1;
-                foreach (var coach in matchzyTeam1.coach)
+                squidcupTeam1.teamName = teamName;
+                teamSides[squidcupTeam1] = "CT";
+                reverseTeamSides["CT"] = squidcupTeam1;
+                foreach (var coach in squidcupTeam1.coach)
                 {
-                    coach.Clan = $"[{matchzyTeam1.teamName} COACH]";
+                    coach.Clan = $"[{squidcupTeam1.teamName} COACH]";
                 }
             } else if (teamNum == 2) {
-                matchzyTeam2.teamName = teamName;
-                teamSides[matchzyTeam2] = "TERRORIST";
-                reverseTeamSides["TERRORIST"] = matchzyTeam2;
-                foreach (var coach in matchzyTeam2.coach)
+                squidcupTeam2.teamName = teamName;
+                teamSides[squidcupTeam2] = "TERRORIST";
+                reverseTeamSides["TERRORIST"] = squidcupTeam2;
+                foreach (var coach in squidcupTeam2.coach)
                 {
-                    coach.Clan = $"[{matchzyTeam2.teamName} COACH]";
+                    coach.Clan = $"[{squidcupTeam2.teamName} COACH]";
                 }
             }
             Server.ExecuteCommand($"mp_teamname_{teamNum} {teamName};");
@@ -530,11 +530,11 @@ namespace MatchZy
 
         public void SwapSidesInTeamData(bool swapTeams) {
             // if (swapTeams) {
-            //     // Here, we sync matchzyTeam1 and matchzyTeam2 with the actual team1 and team2
-            //     (matchzyTeam2, matchzyTeam1) = (matchzyTeam1, matchzyTeam2);
+            //     // Here, we sync squidcupTeam1 and squidcupTeam2 with the actual team1 and team2
+            //     (squidcupTeam2, squidcupTeam1) = (squidcupTeam1, squidcupTeam2);
             // }
 
-            (teamSides[matchzyTeam1], teamSides[matchzyTeam2]) = (teamSides[matchzyTeam2], teamSides[matchzyTeam1]);
+            (teamSides[squidcupTeam1], teamSides[squidcupTeam2]) = (teamSides[squidcupTeam2], teamSides[squidcupTeam1]);
             (reverseTeamSides["CT"], reverseTeamSides["TERRORIST"]) = (reverseTeamSides["TERRORIST"], reverseTeamSides["CT"]);
         }
 
@@ -544,25 +544,25 @@ namespace MatchZy
             var steamId = player.SteamID;
             try
             {
-                if (matchzyTeam1.teamPlayers != null && matchzyTeam1.teamPlayers[steamId.ToString()] != null)
+                if (squidcupTeam1.teamPlayers != null && squidcupTeam1.teamPlayers[steamId.ToString()] != null)
                 {
-                    if (teamSides[matchzyTeam1] == "CT")
+                    if (teamSides[squidcupTeam1] == "CT")
                     {
                         playerTeam = CsTeam.CounterTerrorist;
                     }
-                    else if (teamSides[matchzyTeam1] == "TERRORIST")
+                    else if (teamSides[squidcupTeam1] == "TERRORIST")
                     {
                         playerTeam = CsTeam.Terrorist;
                     }
 
                 }
-                else if (matchzyTeam2.teamPlayers != null && matchzyTeam2.teamPlayers[steamId.ToString()] != null)
+                else if (squidcupTeam2.teamPlayers != null && squidcupTeam2.teamPlayers[steamId.ToString()] != null)
                 {
-                    if (teamSides[matchzyTeam2] == "CT")
+                    if (teamSides[squidcupTeam2] == "CT")
                     {
                         playerTeam = CsTeam.CounterTerrorist;
                     }
-                    else if (teamSides[matchzyTeam2] == "TERRORIST")
+                    else if (teamSides[squidcupTeam2] == "TERRORIST")
                     {
                         playerTeam = CsTeam.Terrorist;
                     }
@@ -582,22 +582,22 @@ namespace MatchZy
         public void EndSeries(string? winnerName, int restartDelay, int t1score, int t2score)
         {
             long matchId = liveMatchId;
-            (int team1Score, int team2Score) = (matchzyTeam1.seriesScore, matchzyTeam2.seriesScore);
+            (int team1Score, int team2Score) = (squidcupTeam1.seriesScore, squidcupTeam2.seriesScore);
             if (winnerName == null)
             {
-                PrintToAllChat($"{ChatColors.Green}{matchzyTeam1.teamName}{ChatColors.Default} and {ChatColors.Green}{matchzyTeam2.teamName}{ChatColors.Default} have tied the match");
+                PrintToAllChat($"{ChatColors.Green}{squidcupTeam1.teamName}{ChatColors.Default} and {ChatColors.Green}{squidcupTeam2.teamName}{ChatColors.Default} have tied the match");
             }
             else
             {
                 Server.PrintToChatAll($"{chatPrefix} {ChatColors.Green}{winnerName}{ChatColors.Default} has won the match");
             }
 
-            string winnerTeam = (winnerName == null) ? "none" : matchzyTeam1.seriesScore > matchzyTeam2.seriesScore ? "team1" : "team2";
+            string winnerTeam = (winnerName == null) ? "none" : squidcupTeam1.seriesScore > squidcupTeam2.seriesScore ? "team1" : "team2";
 
-            var seriesResultEvent = new MatchZySeriesResultEvent()
+            var seriesResultEvent = new SquidcupSeriesResultEvent()
             {
                 MatchId = matchId,
-                Winner = new Winner(t1score > t2score && reverseTeamSides["CT"] == matchzyTeam1 ? "3" : "2", winnerTeam),
+                Winner = new Winner(t1score > t2score && reverseTeamSides["CT"] == squidcupTeam1 ? "3" : "2", winnerTeam),
                 Team1SeriesScore = team1Score,
                 Team2SeriesScore = team2Score,
                 TimeUntilRestore = 10,

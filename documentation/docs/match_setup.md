@@ -1,15 +1,15 @@
 ## What is it?
 
-A match configuration file contains everything that MatchZy and your server needs to host a series. This includes locking
+A match configuration file contains everything that Squidcup and your server needs to host a series. This includes locking
 players to their correct team and side, setting the map(s) and configuring the game rules.
 
-**Note:** MatchZy can still be used for pug/scrim/practice without setting up matches (if `matchzy_kick_when_no_match_loaded` if set to `false`). Match setup is only required when you want to host a series and lock players in their correct team and side.
+**Note:** Squidcup can still be used for pug/scrim/practice without setting up matches (if `squidcup_kick_when_no_match_loaded` if set to `false`). Match setup is only required when you want to host a series and lock players in their correct team and side.
 
-In this documentation, we'll see how we can setup a match in MatchZy using a JSON file (structure of the JSON file is given below).
+In this documentation, we'll see how we can setup a match in Squidcup using a JSON file (structure of the JSON file is given below).
 There are 2 commands available which can be used to load a match:
 
-1. `matchzy_loadmatch <filepath>`: Loads a JSON match configuration file relative to the `csgo` directory.
-2. `matchzy_loadmatch_url <url> [header name] [header value]`: Loads a remote (JSON-formatted) match configuration by sending an HTTP(S) `GET` to the given URL. You may optionally provide an HTTP header and value pair using the `header name` and `header value` arguments. You should put all arguments inside quotation marks (`""`). (`""`).
+1. `squidcup_loadmatch <filepath>`: Loads a JSON match configuration file relative to the `csgo` directory.
+2. `squidcup_loadmatch_url <url> [header name] [header value]`: Loads a remote (JSON-formatted) match configuration by sending an HTTP(S) `GET` to the given URL. You may optionally provide an HTTP header and value pair using the `header name` and `header value` arguments. You should put all arguments inside quotation marks (`""`). (`""`).
 
 ## Example
 
@@ -59,7 +59,7 @@ There are 2 commands available which can be used to load a match:
   "clinch_series": true,
   "players_per_team": 5,
   "cvars": {
-    "hostname": "MatchZy: Astralis vs NaVi #27",
+    "hostname": "Squidcup: Astralis vs NaVi #27",
     "mp_friendlyfire": "0"
   }
 }
@@ -67,8 +67,8 @@ There are 2 commands available which can be used to load a match:
 
 This file can be loaded using :
 
-1. `matchzy_loadmatch astralis_vs_navi_27.json` (if you have `astralis_vs_navi_27.json` in your `csgo` directory)
-2. `matchzy_loadmatch_url "https://<url>/astralis_vs_navi_27.json"`
+1. `squidcup_loadmatch astralis_vs_navi_27.json` (if you have `astralis_vs_navi_27.json` in your `csgo` directory)
+2. `squidcup_loadmatch_url "https://<url>/astralis_vs_navi_27.json"`
 
 
 ## Current Limitations?

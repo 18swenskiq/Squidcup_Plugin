@@ -7,20 +7,20 @@ using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Events;
 
 
-namespace MatchZy
+namespace Squidcup
 {
     [MinimumApiVersion(227)]
-    public partial class MatchZy : BasePlugin
+    public partial class Squidcup : BasePlugin
     {
 
-        public override string ModuleName => "MatchZy";
+        public override string ModuleName => "Squidcup";
         public override string ModuleVersion => "0.8.11";
 
         public override string ModuleAuthor => "WD- (https://github.com/shobhit-pathak/)";
 
         public override string ModuleDescription => "A plugin for running and managing CS2 practice/pugs/scrims/matches!";
 
-        public string chatPrefix = $"[{ChatColors.Green}MatchZy{ChatColors.Default}]";
+        public string chatPrefix = $"[{ChatColors.Green}Squidcup{ChatColors.Default}]";
         public string adminChatPrefix = $"[{ChatColors.Red}ADMIN{ChatColors.Default}]";
 
         // Plugin start phase data
@@ -65,7 +65,7 @@ namespace MatchZy
         public CounterStrikeSharp.API.Modules.Timers.Timer? pausedStateTimer = null;
 
         // Each message is kept in chat display for ~13 seconds, hence setting default chat timer to 13 seconds.
-        // Configurable using matchzy_chat_messages_timer_delay <seconds>
+        // Configurable using squidcup_chat_messages_timer_delay <seconds>
         public int chatTimerDelay = 13;
 
         // Game Config
@@ -91,12 +91,12 @@ namespace MatchZy
             database.InitializeDatabase(ModuleDirectory);
 
             // This sets default config ConVars
-            Server.ExecuteCommand("execifexists MatchZy/config.cfg");
+            Server.ExecuteCommand("execifexists Squidcup/config.cfg");
 
-            teamSides[matchzyTeam1] = "CT";
-            teamSides[matchzyTeam2] = "TERRORIST";
-            reverseTeamSides["CT"] = matchzyTeam1;
-            reverseTeamSides["TERRORIST"] = matchzyTeam2;
+            teamSides[squidcupTeam1] = "CT";
+            teamSides[squidcupTeam2] = "TERRORIST";
+            reverseTeamSides["CT"] = squidcupTeam1;
+            reverseTeamSides["TERRORIST"] = squidcupTeam2;
 
             if (!hotReload) {
                 AutoStart();
@@ -220,7 +220,7 @@ namespace MatchZy
                 CCSPlayerController? player = @event.Userid;
                 if (!IsPlayerValid(player)) return HookResult.Continue;
 
-                if (matchzyTeam1.coach.Contains(player!) || matchzyTeam2.coach.Contains(player!)) {
+                if (squidcupTeam1.coach.Contains(player!) || squidcupTeam2.coach.Contains(player!)) {
                     @event.Silent = true;
                     return HookResult.Changed;
                 }
@@ -344,7 +344,7 @@ namespace MatchZy
                 {
                     int damage = @event.DmgHealth;
                     int postDamageHealth = @event.Health;
-                    PrintToPlayerChat(attacker!, Localizer["matchzy.pracc.damage", damage, victim.PlayerName, postDamageHealth]);
+                    PrintToPlayerChat(attacker!, Localizer["squidcup.pracc.damage", damage, victim.PlayerName, postDamageHealth]);
                     return HookResult.Continue;
                 }
 
@@ -413,7 +413,7 @@ namespace MatchZy
                         else
                         {
                             // ReplyToUserCommand(player, "Usage: .asay <message>");
-                            ReplyToUserCommand(player, Localizer["matchzy.cc.usage", ".asay <message>"]);
+                            ReplyToUserCommand(player, Localizer["squidcup.cc.usage", ".asay <message>"]);
                         }
                     }
                     else
@@ -520,7 +520,7 @@ namespace MatchZy
                 if (attacker!.IsValid)
                 {
                     double roundedBlindDuration = Math.Round(@event.BlindDuration, 2);
-                    PrintToPlayerChat(attacker, Localizer["matchzy.pracc.blind", player!.PlayerName, roundedBlindDuration]);
+                    PrintToPlayerChat(attacker, Localizer["squidcup.pracc.blind", player!.PlayerName, roundedBlindDuration]);
                 }
                 var userId = player!.UserId;
                 if (userId != null && noFlashList.Contains((int)userId))
@@ -537,7 +537,7 @@ namespace MatchZy
             RegisterEventHandler<EventMolotovDetonate>(EventMolotovDetonateHandler);
             RegisterEventHandler<EventDecoyStarted>(EventDecoyDetonateHandler);
 
-            Console.WriteLine($"[{ModuleName} {ModuleVersion} LOADED] MatchZy by WD- (https://github.com/shobhit-pathak/)");
+            Console.WriteLine($"[{ModuleName} {ModuleVersion} LOADED] Squidcup by WD- (https://github.com/shobhit-pathak/)");
         }
     }
 }

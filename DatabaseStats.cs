@@ -14,7 +14,7 @@ using MySqlConnector;
 
 
 
-namespace MatchZy
+namespace Squidcup
 {
     public class Database
     {
@@ -32,16 +32,16 @@ namespace MatchZy
                 string dbType = (connection is SqliteConnection) ? "SQLite" : "MySQL";
                 Log($"[InitializeDatabase] {dbType} Database connection successful");
 
-                // Create the `matchzy_stats_matches`, `matchzy_stats_players` and `matchzy_stats_maps` tables if they doesn't exist
+                // Create the `squidcup_stats_matches`, `squidcup_stats_players` and `squidcup_stats_maps` tables if they doesn't exist
                 if (connection is SqliteConnection) {
                     CreateRequiredTablesSQLite();
                 } else {
                     CreateRequiredTablesSQL();
                 }
 
-                Log("[InitializeDatabase] Table matchzy_stats_matches created (or already exists)");
-                Log("[InitializeDatabase] Table matchzy_stats_players created (or already exists)");
-                Log("[InitializeDatabase] Table matchzy_stats_maps created (or already exists)");
+                Log("[InitializeDatabase] Table squidcup_stats_matches created (or already exists)");
+                Log("[InitializeDatabase] Table squidcup_stats_players created (or already exists)");
+                Log("[InitializeDatabase] Table squidcup_stats_maps created (or already exists)");
             }
             catch (Exception ex)
             {
@@ -59,7 +59,7 @@ namespace MatchZy
                 {
                     connection =
                         new SqliteConnection(
-                            $"Data Source={Path.Join(directory, "matchzy.db")}");
+                            $"Data Source={Path.Join(directory, "squidcup.db")}");
                 }
                 else if (config != null && databaseType == DatabaseType.MySQL)
                 {
@@ -69,7 +69,7 @@ namespace MatchZy
                 else
                 {
                     Log($"[InitializeDatabase] Invalid database specified, using SQLite.");
-                    connection = new SqliteConnection($"Data Source={Path.Join(directory, "matchzy.db")}");
+                    connection = new SqliteConnection($"Data Source={Path.Join(directory, "squidcup.db")}");
                     databaseType = DatabaseType.SQLite;
                 }
             } 
@@ -83,7 +83,7 @@ namespace MatchZy
         public void CreateRequiredTablesSQLite()
         {
             connection.Execute($@"
-            CREATE TABLE IF NOT EXISTS matchzy_stats_matches (
+            CREATE TABLE IF NOT EXISTS squidcup_stats_matches (
                 matchid INTEGER PRIMARY KEY AUTOINCREMENT,
                 start_time DATETIME NOT NULL,
                 end_time DATETIME DEFAULT NULL,
@@ -97,7 +97,7 @@ namespace MatchZy
             )");
 
             connection.Execute(@"
-                CREATE TABLE IF NOT EXISTS matchzy_stats_maps (
+                CREATE TABLE IF NOT EXISTS squidcup_stats_maps (
                     matchid INTEGER NOT NULL,
                     mapnumber INTEGER NOT NULL,
                     start_time DATETIME NOT NULL,
@@ -107,11 +107,11 @@ namespace MatchZy
                     team1_score INTEGER NOT NULL DEFAULT 0,
                     team2_score INTEGER NOT NULL DEFAULT 0,
                     PRIMARY KEY (matchid, mapnumber),
-                    FOREIGN KEY (matchid) REFERENCES matchzy_stats_matches (matchid)
+                    FOREIGN KEY (matchid) REFERENCES squidcup_stats_matches (matchid)
                 )");
 
             connection.Execute(@"
-                CREATE TABLE IF NOT EXISTS matchzy_stats_players (
+                CREATE TABLE IF NOT EXISTS squidcup_stats_players (
                     matchid INTEGER NOT NULL,
                     mapnumber INTEGER NOT NULL,
                     steamid64 INTEGER NOT NULL,
@@ -149,15 +149,15 @@ namespace MatchZy
                     cash_earned INTEGER NOT NULL,
                     enemies_flashed INTEGER NOT NULL,
                     PRIMARY KEY (matchid, mapnumber, steamid64),
-                    FOREIGN KEY (matchid) REFERENCES matchzy_stats_matches (matchid),
-                    FOREIGN KEY (matchid, mapnumber) REFERENCES matchzy_stats_maps (matchid, mapnumber)
+                    FOREIGN KEY (matchid) REFERENCES squidcup_stats_matches (matchid),
+                    FOREIGN KEY (matchid, mapnumber) REFERENCES squidcup_stats_maps (matchid, mapnumber)
                 )");
         }
 
         public void CreateRequiredTablesSQL()
         {
             connection.Execute($@"
-                CREATE TABLE IF NOT EXISTS matchzy_stats_matches (
+                CREATE TABLE IF NOT EXISTS squidcup_stats_matches (
                     matchid INT PRIMARY KEY AUTO_INCREMENT,
                     start_time DATETIME NOT NULL,
                     end_time DATETIME DEFAULT NULL,
@@ -171,7 +171,7 @@ namespace MatchZy
                 )");
                 
             connection.Execute($@"
-            CREATE TABLE IF NOT EXISTS matchzy_stats_maps (
+            CREATE TABLE IF NOT EXISTS squidcup_stats_maps (
                 matchid INT NOT NULL,
                 mapnumber TINYINT(3) UNSIGNED NOT NULL,
                 start_time DATETIME NOT NULL,
@@ -182,11 +182,11 @@ namespace MatchZy
                 team2_score INT NOT NULL DEFAULT 0,
                 PRIMARY KEY (matchid, mapnumber),
                 INDEX mapnumber_index (mapnumber),
-                CONSTRAINT matchzy_stats_maps_matchid FOREIGN KEY (matchid) REFERENCES matchzy_stats_matches (matchid)
+                CONSTRAINT squidcup_stats_maps_matchid FOREIGN KEY (matchid) REFERENCES squidcup_stats_matches (matchid)
             )");
 
             connection.Execute($@"
-            CREATE TABLE IF NOT EXISTS matchzy_stats_players (
+            CREATE TABLE IF NOT EXISTS squidcup_stats_players (
                 matchid INT NOT NULL,
                 mapnumber TINYINT(3) UNSIGNED NOT NULL,
                 steamid64 BIGINT NOT NULL,
@@ -224,8 +224,8 @@ namespace MatchZy
                 cash_earned INT NOT NULL,
                 enemies_flashed INT NOT NULL,
                 PRIMARY KEY (matchid, mapnumber, steamid64),
-                FOREIGN KEY (matchid) REFERENCES matchzy_stats_matches (matchid),
-                FOREIGN KEY (mapnumber) REFERENCES matchzy_stats_maps (mapnumber)
+                FOREIGN KEY (matchid) REFERENCES squidcup_stats_matches (matchid),
+                FOREIGN KEY (mapnumber) REFERENCES squidcup_stats_maps (mapnumber)
             )");
         }
 
@@ -239,12 +239,12 @@ namespace MatchZy
                 if (mapNumber == 0) {
                     if (isMatchSetup && liveMatchId != -1) {
                         connection.Execute(@"
-                            INSERT INTO matchzy_stats_matches (matchid, start_time, team1_name, team2_name, series_type, server_ip)
+                            INSERT INTO squidcup_stats_matches (matchid, start_time, team1_name, team2_name, series_type, server_ip)
                             VALUES (@liveMatchId, " + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
                             new { liveMatchId, team1name, team2name, seriesType, serverIp });
                     } else {
                         connection.Execute(@"
-                            INSERT INTO matchzy_stats_matches (start_time, team1_name, team2_name, series_type, server_ip)
+                            INSERT INTO squidcup_stats_matches (start_time, team1_name, team2_name, series_type, server_ip)
                             VALUES (" + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
                             new { team1name, team2name, seriesType, serverIp });
                     }
@@ -252,7 +252,7 @@ namespace MatchZy
 
                 if (isMatchSetup && liveMatchId != -1) {
                     connection.Execute(@"
-                        INSERT INTO matchzy_stats_maps (matchid, start_time, mapnumber, mapname)
+                        INSERT INTO squidcup_stats_maps (matchid, start_time, mapnumber, mapname)
                         VALUES (@liveMatchId, " + dateTimeExpression + ", @mapNumber, @mapName)",
                         new { liveMatchId, mapNumber, mapName });
                     return liveMatchId;
@@ -270,11 +270,11 @@ namespace MatchZy
                 }
 
                 connection.Execute(@"
-                    INSERT INTO matchzy_stats_maps (matchid, start_time, mapnumber, mapname)
+                    INSERT INTO squidcup_stats_maps (matchid, start_time, mapnumber, mapname)
                     VALUES (@matchId, " + dateTimeExpression + ", @mapNumber, @mapName)",
                     new { matchId, mapNumber, mapName });
 
-                Log($"[InsertMatchData] Data inserted into matchzy_stats_matches with match_id: {matchId}");
+                Log($"[InsertMatchData] Data inserted into squidcup_stats_matches with match_id: {matchId}");
                 return matchId;
             }
             catch (Exception ex)
@@ -288,7 +288,7 @@ namespace MatchZy
             try
             {
                 connection.Execute(@"
-                    UPDATE matchzy_stats_matches
+                    UPDATE squidcup_stats_matches
                     SET team1_name = @team1name, team2_name = @team2name
                     WHERE matchid = @matchId",
                     new { matchId, team1name, team2name });
@@ -308,14 +308,14 @@ namespace MatchZy
                 string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
 
                 string sqlQuery = $@"
-                    UPDATE matchzy_stats_maps
+                    UPDATE squidcup_stats_maps
                     SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
                     WHERE matchid = @matchId AND mapNumber = @mapNumber";
 
                 await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score, mapNumber });
 
                 sqlQuery = $@"
-                    UPDATE matchzy_stats_matches
+                    UPDATE squidcup_stats_matches
                     SET team1_score = @team1SeriesScore, team2_score = @team2SeriesScore
                     WHERE matchid = @matchId";
 
@@ -336,7 +336,7 @@ namespace MatchZy
                 string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
 
                 string sqlQuery = $@"
-                    UPDATE matchzy_stats_matches
+                    UPDATE squidcup_stats_matches
                     SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
                     WHERE matchid = @matchId";
 
@@ -355,7 +355,7 @@ namespace MatchZy
             try
             {
                 string sqlQuery = $@"
-                    UPDATE matchzy_stats_maps
+                    UPDATE squidcup_stats_maps
                     SET team1_score = @t1score, team2_score = @t2score
                     WHERE matchid = @matchId AND mapnumber = @mapNumber";
 
@@ -378,7 +378,7 @@ namespace MatchZy
                     var playerStats = playerStatsDictionary[steamid64];
 
                     string sqlQuery = $@"
-                    INSERT INTO matchzy_stats_players (
+                    INSERT INTO squidcup_stats_players (
                         matchid, mapnumber, steamid64, team, name, kills, deaths, damage, assists,
                         enemy5ks, enemy4ks, enemy3ks, enemy2ks, utility_count, utility_damage,
                         utility_successes, utility_enemies, flash_count, flash_successes,
@@ -411,7 +411,7 @@ namespace MatchZy
 
                     if (connection is SqliteConnection) {
                         sqlQuery = @"
-                        INSERT OR REPLACE INTO matchzy_stats_players (
+                        INSERT OR REPLACE INTO squidcup_stats_players (
                             matchid, mapnumber, steamid64, team, name, kills, deaths, damage, assists,
                             enemy5ks, enemy4ks, enemy3ks, enemy2ks, utility_count, utility_damage,
                             utility_successes, utility_enemies, flash_count, flash_successes,
@@ -496,7 +496,7 @@ namespace MatchZy
                 using (var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)))
                 {
                     IEnumerable<dynamic> playerStatsData = await connection.QueryAsync(
-                        "SELECT * FROM matchzy_stats_players WHERE matchid = @MatchId AND mapnumber = @MapNumber ORDER BY team, kills DESC", new { MatchId = matchId, MapNumber = mapNumber });
+                        "SELECT * FROM squidcup_stats_players WHERE matchid = @MatchId AND mapnumber = @MapNumber ORDER BY team, kills DESC", new { MatchId = matchId, MapNumber = mapNumber });
 
                     // Use the first data row to get the column names
                     dynamic? firstDataRow = playerStatsData.FirstOrDefault();
@@ -551,7 +551,7 @@ namespace MatchZy
         private void SetDatabaseConfig(string directory)
         {
             string fileName = "database.json";
-            string configFile = Path.Combine(Server.GameDirectory + "/csgo/cfg/MatchZy", fileName);
+            string configFile = Path.Combine(Server.GameDirectory + "/csgo/cfg/Squidcup", fileName);
             if (!File.Exists(configFile))
             {
                 // Create a default configuration if the file doesn't exist
@@ -580,7 +580,7 @@ namespace MatchZy
 
         private void Log(string message)
         {
-            Console.WriteLine("[MatchZy] " + message);
+            Console.WriteLine("[Squidcup] " + message);
         }
 
         public enum DatabaseType
