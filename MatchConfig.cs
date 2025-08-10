@@ -75,5 +75,8 @@ namespace Squidcup
 
         [JsonPropertyName("remote_log_header_value")]
         public string RemoteLogHeaderValue { get; set; } = "";
+
+        [JsonPropertyName("match_end_route")]
+        public string MatchEndRoute { get; set; } = "";
     }
 }

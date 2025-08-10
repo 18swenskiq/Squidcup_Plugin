@@ -476,7 +476,8 @@ namespace Squidcup
                 {
                     RemoteLogURL = matchConfig.RemoteLogURL,
                     RemoteLogHeaderKey = matchConfig.RemoteLogHeaderKey,
-                    RemoteLogHeaderValue = matchConfig.RemoteLogURL
+                    RemoteLogHeaderValue = matchConfig.RemoteLogHeaderValue,
+                    MatchEndRoute = matchConfig.MatchEndRoute
                 };
 
                 KillPhaseTimers();
@@ -901,27 +902,36 @@ namespace Squidcup
 
             int remainingMaps = matchConfig.NumMaps - squidcupTeam1.seriesScore - squidcupTeam2.seriesScore;
             Log($"[HandleMatchEnd] MATCH ENDED, remainingMaps: {remainingMaps}, NumMaps: {matchConfig.NumMaps}, Team1SeriesScore: {squidcupTeam1.seriesScore}, Team2SeriesScore: {squidcupTeam2.seriesScore}");
+            
+            // Check if series is complete
+            bool seriesComplete = false;
+            
             if (squidcupTeam1.seriesScore == squidcupTeam2.seriesScore && remainingMaps <= 0)
             {
+                // Tied series with no maps remaining
+                seriesComplete = true;
                 EndSeries(null, restartDelay - 1, t1score, t2score);
             }
             else if (matchConfig.SeriesCanClinch)
             {
                 int mapsToWinSeries = (matchConfig.NumMaps / 2) + 1;
-                if (squidcupTeam1.seriesScore == mapsToWinSeries)
+                if (squidcupTeam1.seriesScore >= mapsToWinSeries || squidcupTeam2.seriesScore >= mapsToWinSeries)
                 {
+                    // One team has won the series
+                    seriesComplete = true;
                     EndSeries(winnerName, restartDelay - 1, t1score, t2score);
-                    return;
-                }
-                else if (squidcupTeam2.seriesScore == mapsToWinSeries)
-                {
-                    EndSeries(winnerName, restartDelay - 1, t1score, t2score);
-                    return;
                 }
             }
             else if (remainingMaps <= 0)
             {
+                // All maps have been played (for non-clinching series)
+                seriesComplete = true;
                 EndSeries(winnerName, restartDelay - 1, t1score, t2score);
+            }
+            
+            // If series is complete, don't continue to next map
+            if (seriesComplete)
+            {
                 return;
             }
             if (squidcupTeam1.seriesScore > squidcupTeam2.seriesScore)

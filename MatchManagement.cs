@@ -608,6 +608,8 @@ namespace Squidcup
                 // Making sure that map end event is fired first
                 await Task.Delay(2000);
                 await SendEventAsync(seriesResultEvent);
+                // Send match end notification to MatchEndRoute
+                await SendMatchEndNotificationAsync(matchId);
             });
 
             if (resetCvarsOnSeriesEnd) ResetChangedConvars();

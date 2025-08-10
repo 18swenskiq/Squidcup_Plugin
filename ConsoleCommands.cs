@@ -518,6 +518,15 @@ namespace Squidcup
                 {
                     // Server.PrintToChatAll($"{chatPrefix} An admin force-ended the match.");
                     PrintToAllChat(Localizer["squidcup.cc.endmatch"]);
+                    
+                    // Send match end notification before resetting if there was an active match
+                    if (isMatchSetup && liveMatchId > 0)
+                    {
+                        Task.Run(async () => {
+                            await SendMatchEndNotificationAsync(liveMatchId);
+                        });
+                    }
+                    
                     ResetMatch();
                 }
                 else
