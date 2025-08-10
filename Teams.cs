@@ -28,8 +28,7 @@ namespace Squidcup
         [JsonIgnore, Newtonsoft.Json.JsonIgnore]
         public HashSet<CCSPlayerController> coach = [];
 
-        [JsonPropertyName("seriesscore")]
-        public int seriesScore = 0;
+        // Removed seriesScore - not needed for BO1
     }
 
     public partial class Squidcup

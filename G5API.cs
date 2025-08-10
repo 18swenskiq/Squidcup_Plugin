@@ -138,7 +138,7 @@ namespace Squidcup
                 get5Status.Team1 = new Get5StatusTeam
                 {
                     Name = squidcupTeam1.teamName,
-                    SeriesScore = squidcupTeam1.seriesScore,
+                    SeriesScore = 0, // Always 0 for BO1 during match
                     CurrentMapScore = team1,
                     ConnectedClients = -1,
                     Ready = ready,
@@ -148,7 +148,7 @@ namespace Squidcup
                 get5Status.Team2 = new Get5StatusTeam
                 {
                     Name = squidcupTeam2.teamName,
-                    SeriesScore = squidcupTeam2.seriesScore,
+                    SeriesScore = 0, // Always 0 for BO1 during match
                     CurrentMapScore = team2,
                     ConnectedClients = -1,
                     Ready = ready,

@@ -147,7 +147,7 @@ namespace Squidcup
 
         static string ValidateMatchJsonStructure(JObject jsonData)
         {
-            string[] requiredFields = { "maplist", "team1", "team2", "num_maps" };
+            string[] requiredFields = { "maplist", "team1", "team2" };
 
             // Check if any required field is missing
             foreach (string field in requiredFields)
@@ -168,18 +168,11 @@ namespace Squidcup
                     case "players_per_team":
                     case "min_players_to_ready":
                     case "min_spectators_to_ready":
-                    case "num_maps":
-                        int numMaps;
-                        if (!int.TryParse(jsonData[field]!.ToString(), out numMaps))
+                        int value;
+                        if (!int.TryParse(jsonData[field]!.ToString(), out value))
                         {
                             return $"{field} should be an integer!";
-                            
                         }
-                        if (field == "num_maps" && numMaps > jsonData["maplist"]!.ToObject<List<string>>()!.Count)
-                        {
-                            return $"{field} should be equal to or greater than maplist!";
-                        }
-                        
                         break;
                     
                     case "cvars":
@@ -231,14 +224,9 @@ namespace Squidcup
                         if (!allElementsValid) {
                             return $"{field} should be \"team1_ct\", \"team1_t\", or \"knife\"!";
                         }
-                        
-                        if (jsonData[field]!.ToObject<List<string>>()!.Count < jsonData["num_maps"]!.Value<int>()) {
-                            return $"{field} should be equal to or greater than num_maps!";
-                        }
                         break;
 
                     case "skip_veto":
-                    case "clinch_series":
                     case "wingman":
                         if (!bool.TryParse(jsonData[field]!.ToString(), out bool result))
                         {
@@ -285,20 +273,21 @@ namespace Squidcup
                 MatchId = liveMatchId,
                 MapsPool = maplist.ToObject<List<string>>()!,
                 MapsLeftInVetoPool = maplist.ToObject<List<string>>()!,
-                NumMaps = jsonDataObject["num_maps"]!.Value<int>(),
+                NumMaps = 1, // Always 1 for BO1
                 MinPlayersToReady = minimumReadyRequired
             };
 
             GetOptionalMatchValues(jsonDataObject);
 
-            if (matchConfig.MapsPool.Count == matchConfig.NumMaps)
+            // For BO1, always skip veto if only 1 map is provided
+            if (matchConfig.MapsPool.Count == 1)
             {
                 matchConfig.SkipVeto = true;
                 isPreVeto = false;
             }
-            else if (matchConfig.MapsPool.Count < matchConfig.NumMaps)
+            else if (matchConfig.MapsPool.Count < 1)
             {
-                Log($"[LOADMATCH] The map pool {matchConfig.MapsPool.Count} is not large enough to play a series of {matchConfig.NumMaps} maps.");
+                Log($"[LOADMATCH] At least 1 map must be provided in the map pool.");
                 return false;
             }
 
@@ -316,7 +305,7 @@ namespace Squidcup
 
             GetCvarValues(jsonDataObject);
 
-            Log($"[LOADMATCH] MinPlayersToReady: {matchConfig.MinPlayersToReady} SeriesClinch: {matchConfig.SeriesCanClinch}");
+            Log($"[LOADMATCH] MinPlayersToReady: {matchConfig.MinPlayersToReady}");
             Log($"[LOADMATCH] MapsPool: {string.Join(", ", matchConfig.MapsPool)} MapsLeftInVetoPool: {string.Join(", ", matchConfig.MapsLeftInVetoPool)}");
 
             LoadClientNames();
@@ -324,7 +313,8 @@ namespace Squidcup
             if (matchConfig.SkipVeto)
             {
                 // Copy the first k maps from the maplist to the final match maps.
-                for (int i = 0; i < matchConfig.NumMaps; i++) 
+                // For BO1, only one map iteration
+                for (int i = 0; i < 1; i++) 
                 {
                     matchConfig.Maplist.Add(matchConfig.MapsPool[i]);
 
@@ -371,7 +361,7 @@ namespace Squidcup
             var seriesStartedEvent = new SquidcupSeriesStartedEvent
             {
                 MatchId = liveMatchId,
-                NumberOfMaps = matchConfig.NumMaps,
+                NumberOfMaps = 1, // Always 1 for BO1
                 Team1 = new(squidcupTeam1.id, squidcupTeam1.teamName),
                 Team2 = new(squidcupTeam2.id, squidcupTeam2.teamName),
             };
@@ -471,7 +461,7 @@ namespace Squidcup
             }
             if (jsonDataObject["clinch_series"] != null)
             {
-                matchConfig.SeriesCanClinch = bool.Parse(jsonDataObject["clinch_series"]!.ToString());
+            // SeriesCanClinch removed - not needed for BO1
             }
             if (jsonDataObject["skip_veto"] != null)
             {
@@ -582,7 +572,6 @@ namespace Squidcup
         public void EndSeries(string? winnerName, int restartDelay, int t1score, int t2score)
         {
             long matchId = liveMatchId;
-            (int team1Score, int team2Score) = (squidcupTeam1.seriesScore, squidcupTeam2.seriesScore);
             if (winnerName == null)
             {
                 PrintToAllChat($"{ChatColors.Green}{squidcupTeam1.teamName}{ChatColors.Default} and {ChatColors.Green}{squidcupTeam2.teamName}{ChatColors.Default} have tied the match");
@@ -592,19 +581,19 @@ namespace Squidcup
                 Server.PrintToChatAll($"{chatPrefix} {ChatColors.Green}{winnerName}{ChatColors.Default} has won the match");
             }
 
-            string winnerTeam = (winnerName == null) ? "none" : squidcupTeam1.seriesScore > squidcupTeam2.seriesScore ? "team1" : "team2";
+            string winnerTeam = (winnerName == null) ? "none" : t1score > t2score ? "team1" : "team2";
 
             var seriesResultEvent = new SquidcupSeriesResultEvent()
             {
                 MatchId = matchId,
                 Winner = new Winner(t1score > t2score && reverseTeamSides["CT"] == squidcupTeam1 ? "3" : "2", winnerTeam),
-                Team1SeriesScore = team1Score,
-                Team2SeriesScore = team2Score,
+                Team1SeriesScore = t1score > t2score ? 1 : 0,
+                Team2SeriesScore = t2score > t1score ? 1 : 0,
                 TimeUntilRestore = 10,
             };
 
             Task.Run(async () => {
-                await database.SetMatchEndData(matchId, winnerName ?? "Draw", team1Score, team2Score);
+                await database.SetMatchEndData(matchId, winnerName ?? "Draw", t1score > t2score ? 1 : 0, t2score > t1score ? 1 : 0);
                 // Making sure that map end event is fired first
                 await Task.Delay(2000);
                 await SendEventAsync(seriesResultEvent);

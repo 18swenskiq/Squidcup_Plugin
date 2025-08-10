@@ -25,7 +25,7 @@ namespace Squidcup
         [JsonPropertyName("match_id")]
         public long MatchId { get; set; }
 
-        [JsonPropertyName("num_maps")]
+        // Always 1 for BO1 - removed from JSON parsing
         public int NumMaps { get; set; } = 1;
 
         [JsonPropertyName("players_per_team")]
@@ -37,13 +37,13 @@ namespace Squidcup
         [JsonPropertyName("min_spectators_to_ready")]
         public int MinSpectatorsToReady { get; set; } = 0;
 
-        [JsonPropertyName("current_map_number")]
+        // Always 0 for BO1 - no map progression
         public int CurrentMapNumber { get; set; } = 0;
 
         [JsonPropertyName("map_sides")]
         public List<string> MapSides { get; set; } = new List<string>();
 
-        [JsonPropertyName("series_can_clinch")]
+        // Not needed for BO1 - removed from JSON parsing
         public bool SeriesCanClinch { get; set; } = true;
 
         [JsonPropertyName("scrim")]

@@ -435,8 +435,8 @@ namespace Squidcup
                         { "team2_side", teamSides[squidcupTeam2] },
                         { "team1_score", t1score.ToString() },
                         { "team2_score", t2score.ToString() },
-                        { "team1_series_score", squidcupTeam1.seriesScore.ToString() },
-                        { "team2_series_score", squidcupTeam2.seriesScore.ToString() },
+                        { "team1_series_score", "0" }, // Always 0 for BO1
+                        { "team2_series_score", "0" }, // Always 0 for BO1
                         { "TerroristTimeOuts", gameRules.TerroristTimeOuts.ToString() },
                         { "CTTimeOuts", gameRules.CTTimeOuts.ToString() },
                         { "match_loaded", isMatchSetup.ToString() },

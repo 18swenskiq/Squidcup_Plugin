@@ -98,7 +98,12 @@ namespace Squidcup
                     HandleVetoStep();
                 }
             }
-            else if (matchConfig.NumMaps > matchConfig.Maplist.Count)
+            else if (matchConfig.Maplist.Count > 1)
+            {
+                Log($"[HANDLEMAPRESTRICTIONS] Multiple maps specified in maplist for BO1. Using first map: {matchConfig.Maplist[0]}");
+                matchConfig.Maplist = new List<string> { matchConfig.Maplist[0] };
+            }
+            else
             {
                 if (matchConfig.MapsLeftInVetoPool.Count == 1)
                 {
@@ -113,10 +118,6 @@ namespace Squidcup
                     // More than 1 map in the pool and not all maps are picked; present choices as determine by config.
                     PromptForMapSelectionInChat(GetCurrentMapSelectionOption());
                 }
-            }
-            else
-            {
-                FinishVeto();
             }
         }
 
@@ -467,27 +468,16 @@ namespace Squidcup
 
         public bool ValidateMapBanLogic() 
         {
-            int numberOfPicks = 0;
-            string option;
-            for (int i = 0; i < matchConfig.MapBanOrder.Count; i++) {
-                option = matchConfig.MapBanOrder[i];
-                if (option == "team1_pick" || option == "team2_pick") {
-                    numberOfPicks++;
-                }
-                if (numberOfPicks == matchConfig.NumMaps || i == matchConfig.MapsPool.Count - 2) {
-                    break;
-                }
-            }
-
-            // Example: In a Bo3, at least 2 of the options must be picks to avoid randomly selecting map order of remaining maps.
-            if (matchConfig.NumMaps > 1 && numberOfPicks < matchConfig.NumMaps - 1) {
-                Log($"[ValidateMapBanLogic] In a series of {matchConfig.NumMaps} maps, at least {matchConfig.NumMaps - 1} veto options must be picks. Found {numberOfPicks} pick(s).");
+            // For BO1, the logic is simple: we need exactly (map pool size - 1) ban operations
+            // to leave one map remaining for play
+            if (matchConfig.MapsPool.Count <= 1) {
+                Log($"[ValidateMapBanLogic] Map pool must contain at least 2 maps for veto process.");
                 return false;
             }
 
-            if (matchConfig.MapsPool.Count - 1 != matchConfig.MapBanOrder.Count && numberOfPicks != matchConfig.NumMaps) {
-                // Example: Map pool of 7 requires 6 picks/bans *unless* we have picks for all maps.
-                Log($"[ValidateMapBanLogic] The number of maps in the pool {matchConfig.MapsPool.Count} must be one larger than the number of map picks/bans {matchConfig.MapBanOrder.Count}, unless the number of picks {numberOfPicks} matches the series length {matchConfig.NumMaps}.");
+            int expectedBanCount = matchConfig.MapsPool.Count - 1;
+            if (matchConfig.MapBanOrder.Count != expectedBanCount) {
+                Log($"[ValidateMapBanLogic] For BO1 with {matchConfig.MapsPool.Count} maps in pool, expected {expectedBanCount} ban operations but found {matchConfig.MapBanOrder.Count}.");
                 return false;
             }
 
@@ -557,93 +547,15 @@ namespace Squidcup
                 if (reverseTeamSides["TERRORIST"] == squidcupTeam1) startingVetoTeam = squidcupTeam2;
                 if (reverseTeamSides["TERRORIST"] == squidcupTeam2) startingVetoTeam = squidcupTeam1;
             }
-            switch (matchConfig.NumMaps)
+
+            // For BO1: alternate bans until only one map remains
+            int numberOfBans = matchConfig.MapsPool.Count - 1;
+            for (int i = 0; i < numberOfBans; i++)
             {
-                case 1:
-                    int numberOfBans = matchConfig.MapsPool.Count - 1;  // Last map either played by default or ignored.
-                    for (int i = 0; i < numberOfBans; i++)
-                    {
-                        matchConfig.MapBanOrder.Add(
-                        i % 2 == 0
-                            ? (startingVetoTeam == squidcupTeam1 ? "team1_ban" : "team2_ban")
-                            : (startingVetoTeam == squidcupTeam1 ? "team2_ban" : "team1_ban"));
-                    }
-                    break;
-
-                case 2:
-                    if (matchConfig.MapsPool.Count < 5)
-                    {
-                        matchConfig.MapBanOrder.Add(startingVetoTeam == squidcupTeam1 ? "team1_pick"
-                                                                        : "team2_pick");
-                        matchConfig.MapBanOrder.Add(startingVetoTeam == squidcupTeam1 ? "team2_pick"
-                                                                        : "team1_pick");
-                    }
-                    else
-                    {
-                        matchConfig.MapBanOrder.Add(startingVetoTeam == squidcupTeam1 ? "team1_ban"
-                                                                        : "team2_ban");
-                        matchConfig.MapBanOrder.Add(startingVetoTeam == squidcupTeam1 ? "team2_ban"
-                                                                        : "team1_ban");
-                        matchConfig.MapBanOrder.Add(startingVetoTeam == squidcupTeam1 ? "team1_pick"
-                                                                        : "team2_pick");
-                        matchConfig.MapBanOrder.Add(startingVetoTeam == squidcupTeam1 ? "team2_pick"
-                                                                        : "team1_pick");
-                    }
-                    break;
-
-                default:
-                    // Bo3 with 7 maps as an example.
-                    // For this to work, a Bo3 requires a map pool of at least 5.
-                    if (matchConfig.MapsPool.Count >= matchConfig.NumMaps + 2)
-                    {  // 7 >= 3 + 2
-                        int numberOfPicks = matchConfig.NumMaps - 1;    // 2 picks in a Bo3
-                        // Determine how many bans before we start picking (may be 0):
-                        int numberOfStartBans = matchConfig.MapsPool.Count - (matchConfig.NumMaps + 2);  // 7 - (3 + 2) = 2
-                        if (numberOfStartBans > 0)
-                        {                                          // == 2
-                            for (int i = 0; i < numberOfStartBans; i++)
-                            {
-                                matchConfig.MapBanOrder.Add(
-                                matchConfig.MapBanOrder.Count % 2 == 0
-                                    ? (startingVetoTeam == squidcupTeam1 ? "team1_ban" : "team2_ban")
-                                    : (startingVetoTeam == squidcupTeam1 ? "team2_ban" : "team1_ban"));
-                            }
-                        }
-
-                        // After the initial bans, add the picks:
-                        for (int i = 0; i < numberOfPicks; i++)
-                        {
-                            matchConfig.MapBanOrder.Add(
-                                matchConfig.MapBanOrder.Count % 2 == 0
-                                ? (startingVetoTeam == squidcupTeam1 ? "team1_pick" : "team2_pick")
-                                : (startingVetoTeam == squidcupTeam1 ? "team2_pick" : "team1_pick"));
-                        }
-
-                        // Determine how many bans to append to the end (may be 0):
-                        int numberOfEndBans = matchConfig.MapsPool.Count - 1 - numberOfPicks - numberOfStartBans;  // 7 - 2 - 2 - 1 = 2
-                        if (numberOfEndBans > 0)
-                        {                                                     // == 2
-                            for (int i = 0; i < numberOfEndBans; i++)
-                            {
-                                matchConfig.MapBanOrder.Add(
-                                matchConfig.MapBanOrder.Count % 2 == 0
-                                    ? (startingVetoTeam == squidcupTeam1 ? "team1_ban" : "team2_ban")
-                                    : (startingVetoTeam == squidcupTeam1 ? "team2_ban" : "team1_ban"));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // else we just alternate picks and ignore the last map.
-                        for (int i = 0; i < matchConfig.NumMaps; i++)
-                        {
-                            matchConfig.MapBanOrder.Add(
-                                i % 2 == 0
-                                ? (startingVetoTeam == squidcupTeam1 ? "team1_pick" : "team2_pick")
-                                : (startingVetoTeam == squidcupTeam1 ? "team2_pick" : "team1_pick"));
-                        }
-                    }
-                    break;
+                matchConfig.MapBanOrder.Add(
+                    i % 2 == 0
+                        ? (startingVetoTeam == squidcupTeam1 ? "team1_ban" : "team2_ban")
+                        : (startingVetoTeam == squidcupTeam1 ? "team2_ban" : "team1_ban"));
             }
         }
 

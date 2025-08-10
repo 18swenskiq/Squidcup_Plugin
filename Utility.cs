@@ -460,8 +460,8 @@ namespace Squidcup
                 coachKillTimer?.Kill();
                 coachKillTimer = null;
 
-                squidcupTeam1.seriesScore = 0;
-                squidcupTeam2.seriesScore = 0;
+                // Reset scores for BO1
+                // Series score tracking removed for BO1
 
                 Server.ExecuteCommand($"mp_teamname_1 {squidcupTeam1.teamName}");
                 Server.ExecuteCommand($"mp_teamname_2 {squidcupTeam2.teamName}");
@@ -772,7 +772,7 @@ namespace Squidcup
 
             HandleClanTags();
 
-            string seriesType = "BO" + matchConfig.NumMaps.ToString();
+            string seriesType = "BO1"; // Always BO1
             liveMatchId = database.InitMatch(squidcupTeam1.teamName, squidcupTeam2.teamName, "-", isMatchSetup, liveMatchId, matchConfig.CurrentMapNumber, seriesType);
             SetupRoundBackupFile();
 
@@ -870,8 +870,6 @@ namespace Squidcup
 
             string winnerName = GetMatchWinnerName();
             (int t1score, int t2score) = GetTeamsScore();
-            int team1SeriesScore = squidcupTeam1.seriesScore;
-            int team2SeriesScore = squidcupTeam2.seriesScore;
 
             string statsPath = Server.GameDirectory + "/csgo/Squidcup_Stats/" + liveMatchId.ToString();
 
@@ -879,103 +877,20 @@ namespace Squidcup
             {
                 MatchId = liveMatchId,
                 MapNumber = currentMapNumber,
-                Winner = new Winner(t1score > t2score && reverseTeamSides["CT"] == squidcupTeam1 ? "3" : "2", team1SeriesScore > team2SeriesScore ? "team1" : "team2"),
-                StatsTeam1 = new SquidcupStatsTeam(squidcupTeam1.id, squidcupTeam1.teamName, team1SeriesScore, t1score, 0, 0, new List<StatsPlayer>()),
-                StatsTeam2 = new SquidcupStatsTeam(squidcupTeam2.id, squidcupTeam2.teamName, team2SeriesScore, t2score, 0, 0, new List<StatsPlayer>())
+                Winner = new Winner(t1score > t2score && reverseTeamSides["CT"] == squidcupTeam1 ? "3" : "2", t1score > t2score ? "team1" : "team2"),
+                StatsTeam1 = new SquidcupStatsTeam(squidcupTeam1.id, squidcupTeam1.teamName, 0, t1score, 0, 0, new List<StatsPlayer>()),
+                StatsTeam2 = new SquidcupStatsTeam(squidcupTeam2.id, squidcupTeam2.teamName, 0, t2score, 0, 0, new List<StatsPlayer>())
             };
 
             Task.Run(async () =>
             {
                 await SendEventAsync(mapResultEvent);
-                await database.SetMapEndData(liveMatchId, currentMapNumber, winnerName, t1score, t2score, team1SeriesScore, team2SeriesScore);
+                await database.SetMapEndData(liveMatchId, currentMapNumber, winnerName, t1score, t2score, 0, 0);
                 await database.WritePlayerStatsToCsv(statsPath, liveMatchId, currentMapNumber);
             });
 
-            // If a match is not setup, it was supposed to be a pug/scrim with 1 map
-            // Hence we reset the match once it is over
-            // Todo: Support BO3/BO5 in pugs as well
-            if (!isMatchSetup)
-            {
-                EndSeries(winnerName, restartDelay - 1, t1score, t2score);
-                return;
-            }
-
-            int remainingMaps = matchConfig.NumMaps - squidcupTeam1.seriesScore - squidcupTeam2.seriesScore;
-            Log($"[HandleMatchEnd] MATCH ENDED, remainingMaps: {remainingMaps}, NumMaps: {matchConfig.NumMaps}, Team1SeriesScore: {squidcupTeam1.seriesScore}, Team2SeriesScore: {squidcupTeam2.seriesScore}");
-            
-            // Check if series is complete
-            bool seriesComplete = false;
-            
-            if (squidcupTeam1.seriesScore == squidcupTeam2.seriesScore && remainingMaps <= 0)
-            {
-                // Tied series with no maps remaining
-                seriesComplete = true;
-                EndSeries(null, restartDelay - 1, t1score, t2score);
-            }
-            else if (matchConfig.SeriesCanClinch)
-            {
-                int mapsToWinSeries = (matchConfig.NumMaps / 2) + 1;
-                if (squidcupTeam1.seriesScore >= mapsToWinSeries || squidcupTeam2.seriesScore >= mapsToWinSeries)
-                {
-                    // One team has won the series
-                    seriesComplete = true;
-                    EndSeries(winnerName, restartDelay - 1, t1score, t2score);
-                }
-            }
-            else if (remainingMaps <= 0)
-            {
-                // All maps have been played (for non-clinching series)
-                seriesComplete = true;
-                EndSeries(winnerName, restartDelay - 1, t1score, t2score);
-            }
-            
-            // If series is complete, don't continue to next map
-            if (seriesComplete)
-            {
-                return;
-            }
-            if (squidcupTeam1.seriesScore > squidcupTeam2.seriesScore)
-            {
-                Server.PrintToChatAll($"{chatPrefix} {ChatColors.Green}{squidcupTeam1.teamName}{ChatColors.Default} is winning the series {ChatColors.Green}{squidcupTeam1.seriesScore}-{squidcupTeam2.seriesScore}{ChatColors.Default}");
-
-            }
-            else if (squidcupTeam2.seriesScore > squidcupTeam1.seriesScore)
-            {
-                Server.PrintToChatAll($"{chatPrefix} {ChatColors.Green}{squidcupTeam2.teamName}{ChatColors.Default} is winning the series {ChatColors.Green}{squidcupTeam2.seriesScore}-{squidcupTeam1.seriesScore}{ChatColors.Default}");
-
-            }
-            else
-            {
-                Server.PrintToChatAll($"{chatPrefix} The series is tied at {ChatColors.Green}{squidcupTeam1.seriesScore}-{squidcupTeam2.seriesScore}{ChatColors.Default}");
-            }
-            matchConfig.CurrentMapNumber += 1;
-            string nextMap = matchConfig.Maplist[matchConfig.CurrentMapNumber];
-
-            if (isPaused)
-                UnpauseMatch();
-
-            stopData["ct"] = false;
-            stopData["t"] = false;
-
-            KillPhaseTimers();
-
-            AddTimer(restartDelay - 4, () =>
-            {
-                if (!isMatchSetup) return;
-                ChangeMap(nextMap, 3.0f);
-                matchStarted = false;
-                readyAvailable = true;
-                isPaused = false;
-
-                isWarmup = true;
-                isKnifeRound = false;
-                isSideSelectionPhase = false;
-                isMatchLive = false;
-                isPractice = false;
-                isDryRun = false;
-                StartWarmup();
-                SetMapSides();
-            });
+            // For BO1, the match always ends after the first map
+            EndSeries(winnerName, restartDelay - 1, t1score, t2score);
         }
 
         private void ChangeMap(string mapName, float delay)
@@ -1001,12 +916,10 @@ namespace Squidcup
             (int t1score, int t2score) = GetTeamsScore();
             if (t1score > t2score)
             {
-                squidcupTeam1.seriesScore++;
                 return squidcupTeam1.teamName;
             }
             else if (t2score > t1score)
             {
-                squidcupTeam2.seriesScore++;
                 return squidcupTeam2.teamName;
             }
             else
