@@ -161,6 +161,7 @@ namespace Squidcup
                     unreadyPlayers.Add(playerData[key].PlayerName);
                 }
             }
+            
             if (unreadyPlayers.Count > 0)
             {
                 string unreadyPlayerList = string.Join(", ", unreadyPlayers);
@@ -169,11 +170,27 @@ namespace Squidcup
                 // Server.PrintToChatAll($"{chatPrefix} Unready players: {unreadyPlayerList}. Please type .ready to ready up! {minimumReadyRequiredMessage}");
                 if (isRoundRestorePending)
                 {
-                    PrintToAllChat(Localizer["squidcup.ready.readytotestorebackupinfomessage", unreadyPlayerList, minimumReadyRequiredMessage]);
+                    try
+                    {
+                        PrintToAllChat(Localizer["squidcup.ready.readytotestorebackupinfomessage", unreadyPlayerList, minimumReadyRequiredMessage]);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"[SendUnreadyPlayersMessage] Error with localized restore message: {ex.Message}");
+                        Server.PrintToChatAll($"{chatPrefix} Please type .ready to ready-up! {minimumReadyRequiredMessage}");
+                    }
                 }
                 else
                 {
-                    PrintToAllChat(Localizer["squidcup.utility.unreadyplayers", unreadyPlayerList, minimumReadyRequiredMessage]);
+                    try
+                    {
+                        PrintToAllChat(Localizer["squidcup.utility.unreadyplayers", unreadyPlayerList, minimumReadyRequiredMessage]);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"[SendUnreadyPlayersMessage] Error with localized unready message: {ex.Message}");
+                        Server.PrintToChatAll($"{chatPrefix} Please type .ready to ready up! {minimumReadyRequiredMessage}");
+                    }
                 }
             }
             else
@@ -181,13 +198,27 @@ namespace Squidcup
                 int countOfReadyPlayers = playerReadyStatus.Count(kv => kv.Value == true);
                 if (isMatchSetup)
                 {
-                    // Server.PrintToChatAll($"{chatPrefix} Current ready players: {ChatColors.Green}{countOfReadyPlayers}{ChatColors.Default}");
-                    PrintToAllChat(Localizer["squidcup.utility.readyplayers", countOfReadyPlayers]);
+                    try
+                    {
+                        PrintToAllChat(Localizer["squidcup.utility.readyplayers", countOfReadyPlayers]);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"[SendUnreadyPlayersMessage] Error with localized ready players message: {ex.Message}");
+                        Server.PrintToChatAll($"{chatPrefix} Current ready players: {ChatColors.Green}{countOfReadyPlayers}{ChatColors.Default}");
+                    }
                 }
                 else
                 {
-                    // Server.PrintToChatAll($"{chatPrefix} Minimum ready players required {ChatColors.Green}{minimumReadyRequired}{ChatColors.Default}, current ready players: {ChatColors.Green}{countOfReadyPlayers}{ChatColors.Default}");
-                    PrintToAllChat(Localizer["squidcup.utility.minimumreadyplayers", minimumReadyRequired, countOfReadyPlayers]);
+                    try
+                    {
+                        PrintToAllChat(Localizer["squidcup.utility.minimumreadyplayers", minimumReadyRequired, countOfReadyPlayers]);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"[SendUnreadyPlayersMessage] Error with localized minimum ready message: {ex.Message}");
+                        Server.PrintToChatAll($"{chatPrefix} Minimum ready players required {ChatColors.Green}{minimumReadyRequired}{ChatColors.Default}, current ready players: {ChatColors.Green}{countOfReadyPlayers}{ChatColors.Default}");
+                    }
                 }
             }
         }
