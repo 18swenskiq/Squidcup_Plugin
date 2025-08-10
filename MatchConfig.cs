@@ -52,8 +52,8 @@ namespace Squidcup
         [JsonPropertyName("wait_for_map")]
         public bool WaitForMap { get; set; } = true;
 
-        [JsonPropertyName("wingman")]
-        public bool Wingman { get; set; } = false;
+        [JsonPropertyName("gamemode")]
+        public string GameMode { get; set; } = "5v5";
 
         [JsonPropertyName("match_side_type")]
         public string MatchSideType { get; set; } = "standard";

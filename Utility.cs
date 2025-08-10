@@ -21,6 +21,11 @@ namespace Squidcup
         public const string knifeCfgPath = "Squidcup/knife.cfg";
         public const string liveCfgPath = "Squidcup/live.cfg";
         public const string liveWingmanCfgPath = "Squidcup/live_wingman.cfg";
+        
+        // Gamemode configuration paths
+        public const string live1v1CfgPath = "Squidcup/live_1v1.cfg";
+        public const string live3v3CfgPath = "Squidcup/live_3v3.cfg";
+        public const string live5v5CfgPath = "Squidcup/live.cfg"; // Default 5v5 uses live.cfg
 
         private void PrintToAllChat(string message)
         {
@@ -1234,16 +1239,8 @@ namespace Squidcup
 
         private void ExecLiveCFG()
         {
-            int gameMode = GetGameMode();
-
-            var cfgPath = liveCfgPath;
-            var absolutePath = Path.Join(Server.GameDirectory + "/csgo/cfg", liveCfgPath);
-
-            if (gameMode == 2)
-            {
-                absolutePath = Path.Join(Server.GameDirectory + "/csgo/cfg", liveWingmanCfgPath);
-                cfgPath = liveWingmanCfgPath;
-            }
+            var cfgPath = GetLiveCfgPath(matchConfig.GameMode);
+            var absolutePath = Path.Join(Server.GameDirectory + "/csgo/cfg", cfgPath);
 
             // We try to find the CFG in the cfg folder, if it is not there then we execute the default CFG.
             if (File.Exists(absolutePath))
@@ -1255,7 +1252,7 @@ namespace Squidcup
             else
             {
                 Log($"[StartLive] Starting Live! Live CFG not found in {absolutePath}, using default CFG!");
-                if (gameMode == 2)
+                if (matchConfig.GameMode.ToLower() == "wingman")
                 {
                     Server.ExecuteCommand("ammo_grenade_limit_default 1;ammo_grenade_limit_flashbang 2;ammo_grenade_limit_total 4;bot_quota 0;cash_player_bomb_defused 300;cash_player_bomb_planted 300;cash_player_damage_hostage -30;cash_player_interact_with_hostage 300;cash_player_killed_enemy_default 300;cash_player_killed_enemy_factor 1;cash_player_killed_hostage -1000;cash_player_killed_teammate -300;cash_player_rescued_hostage 1000;cash_team_bonus_shorthanded 1000;cash_team_elimination_bomb_map 2750;cash_team_elimination_hostage_map_ct 2500;cash_team_elimination_hostage_map_t 2500;cash_team_hostage_alive 0;cash_team_hostage_interaction 600;cash_team_loser_bonus 2000;cash_team_loser_bonus_consecutive_rounds 300;cash_team_planted_bomb_but_defused 600;cash_team_rescued_hostage 600;cash_team_terrorist_win_bomb 3000;cash_team_win_by_defusing_bomb 3000;cash_team_win_by_hostage_rescue 2900;cash_team_win_by_time_running_out_bomb 2750;cash_team_win_by_time_running_out_hostage 2750;ff_damage_reduction_bullets 0.33;ff_damage_reduction_grenade 0.85;ff_damage_reduction_grenade_self 1;ff_damage_reduction_other 0.4;mp_afterroundmoney 0;mp_autokick 0;mp_autoteambalance 0;mp_backup_restore_load_autopause 0;mp_backup_round_auto 1;mp_buy_anywhere 0;mp_buy_during_immunity 0;mp_buytime 20;mp_c4timer 40;mp_ct_default_melee weapon_knife;mp_ct_default_primary \"\";mp_ct_default_secondary weapon_hkp2000;mp_death_drop_defuser 1;mp_death_drop_grenade 2;mp_death_drop_gun 1;mp_defuser_allocation 0;mp_display_kill_assists 1;mp_endmatch_votenextmap 0;mp_forcecamera 1;mp_free_armor 0;mp_freezetime 10;mp_friendlyfire 1;mp_give_player_c4 1;mp_halftime 1;mp_halftime_duration 15;mp_halftime_pausetimer 0;mp_ignore_round_win_conditions 0;mp_limitteams 0;mp_match_can_clinch 1;mp_match_end_restart 1;mp_maxmoney 8000;");
                     Server.ExecuteCommand("mp_maxrounds 16;mp_overtime_enable 1;mp_overtime_halftime_pausetimer 0;mp_overtime_maxrounds 4;mp_overtime_startmoney 8000;mp_playercashawards 1;mp_randomspawn 0;mp_respawn_immunitytime 0;mp_respawn_on_death_ct 0;mp_respawn_on_death_t 0;mp_round_restart_delay 7;mp_roundtime 1.5;mp_roundtime_defuse 1.5;mp_roundtime_hostage 1.5;mp_solid_teammates 1;mp_starting_losses 1;mp_startmoney 800;mp_t_default_melee weapon_knife;mp_t_default_primary \"\";mp_t_default_secondary weapon_glock;mp_teamcashawards 1;mp_timelimit 0;mp_weapons_allow_map_placed 1;mp_weapons_allow_zeus 1;mp_win_panel_display_time 3;spec_freeze_deathanim_time 0;spec_freeze_time 2;spec_freeze_time_lock 2;spec_replay_enable 0;sv_allow_votes 0;sv_auto_full_alltalk_during_warmup_half_end 0;sv_damage_print_enable 0;sv_deadtalk 1;sv_hibernate_postgame_delay 300;sv_ignoregrenaderadio 0;sv_infinite_ammo 0;sv_talk_enemy_dead 0;sv_talk_enemy_living 0;sv_voiceenable 1;tv_relayvoice 0");
@@ -1716,14 +1713,39 @@ namespace Squidcup
 
         public void SetCorrectGameMode()
         {
-            ConVar.Find("game_mode")!.SetValue(matchConfig.Wingman ? 2 : 1);
-            ConVar.Find("game_type")!.SetValue(0); // Classic GameType
+            var (gameMode, gameType) = GetGameModeSettings(matchConfig.GameMode);
+            ConVar.Find("game_mode")!.SetValue(gameMode);
+            ConVar.Find("game_type")!.SetValue(gameType);
         }
 
-        public bool IsMapReloadRequiredForGameMode(bool wingman)
+        public (int gameMode, int gameType) GetGameModeSettings(string gamemode)
         {
-            int expectedMode = wingman ? 2 : 1;
-            if (GetGameMode() != expectedMode || GetGameType() != 0)
+            return gamemode.ToLower() switch
+            {
+                "1v1" => (1, 0),     // Classic Competitive
+                "wingman" => (2, 0), // Wingman
+                "3v3" => (1, 0),     // Classic Competitive  
+                "5v5" => (1, 0),     // Classic Competitive (default)
+                _ => (1, 0)          // Default to 5v5
+            };
+        }
+
+        public string GetLiveCfgPath(string gamemode)
+        {
+            return gamemode.ToLower() switch
+            {
+                "1v1" => live1v1CfgPath,
+                "wingman" => liveWingmanCfgPath,
+                "3v3" => live3v3CfgPath,
+                "5v5" => live5v5CfgPath,
+                _ => live5v5CfgPath // Default to 5v5
+            };
+        }
+
+        public bool IsMapReloadRequiredForGameMode(string gamemode)
+        {
+            var (expectedGameMode, expectedGameType) = GetGameModeSettings(gamemode);
+            if (GetGameMode() != expectedGameMode || GetGameType() != expectedGameType)
             {
                 return true;
             }
@@ -1732,8 +1754,7 @@ namespace Squidcup
 
         public bool IsWingmanMode()
         {
-            if (GetGameMode() == 2 && GetGameType() == 0) return true;
-            return false;
+            return matchConfig.GameMode.ToLower() == "wingman";
         }
 
         public void KickPlayer(CCSPlayerController player)

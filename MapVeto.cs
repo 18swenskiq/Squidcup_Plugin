@@ -347,7 +347,7 @@ namespace Squidcup
                 playerReadyStatus[key] = false;
             }
 
-            if (IsMapReloadRequiredForGameMode(matchConfig.Wingman) || mapReloadRequired || currentMapName != mapToPlay) {
+            if (IsMapReloadRequiredForGameMode(matchConfig.GameMode) || mapReloadRequired || currentMapName != mapToPlay) {
 
                 SetCorrectGameMode();
                 float delay = 7.0f;

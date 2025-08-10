@@ -227,10 +227,12 @@ namespace Squidcup
                         break;
 
                     case "skip_veto":
-                    case "wingman":
-                        if (!bool.TryParse(jsonData[field]!.ToString(), out bool result))
+                    case "gamemode":
+                        string gamemodeValue = jsonData[field]!.ToString();
+                        string[] validGameModes = { "1v1", "wingman", "3v3", "5v5" };
+                        if (!validGameModes.Contains(gamemodeValue.ToLower()))
                         {
-                            return $"{field} should be a boolean!";
+                            return $"{field} should be one of: 1v1, wingman, 3v3, 5v5";
                         }
                         break;
                 }
@@ -332,7 +334,7 @@ namespace Squidcup
                 string currentMapName = Server.MapName;
                 string mapName = matchConfig.Maplist[0].ToString();
 
-                if (IsMapReloadRequiredForGameMode(matchConfig.Wingman) || mapReloadRequired || currentMapName != mapName) 
+                if (IsMapReloadRequiredForGameMode(matchConfig.GameMode) || mapReloadRequired || currentMapName != mapName) 
                 {
                     SetCorrectGameMode();
                     ChangeMap(mapName, 0);
@@ -471,9 +473,14 @@ namespace Squidcup
             {
                 matchConfig.WaitForMap = bool.Parse(jsonDataObject["wait_for_map"]!.ToString());
             }
-            if (jsonDataObject["wingman"] != null)
+            if (jsonDataObject["gamemode"] != null)
             {
-                matchConfig.Wingman = bool.Parse(jsonDataObject["wingman"]!.ToString());
+                matchConfig.GameMode = jsonDataObject["gamemode"]!.ToString();
+            }
+            // Legacy support: convert old "wingman": true to "gamemode": "wingman"
+            else if (jsonDataObject["wingman"] != null && bool.Parse(jsonDataObject["wingman"]!.ToString()))
+            {
+                matchConfig.GameMode = "wingman";
             }
             if (jsonDataObject["veto_mode"] != null)
             {
@@ -614,7 +621,7 @@ namespace Squidcup
                 Server.ExecuteCommand("mp_overtime_enable 0");
                 Server.ExecuteCommand("mp_match_can_clinch false");
             } else {
-                var absoluteCfgPath = Path.Join(Server.GameDirectory + "/csgo/cfg", GetGameMode() == 1 ? liveCfgPath : liveWingmanCfgPath);
+                var absoluteCfgPath = Path.Join(Server.GameDirectory + "/csgo/cfg", GetLiveCfgPath(matchConfig.GameMode));
                 string? matchCanClinch = GetConvarValueFromCFGFile(absoluteCfgPath, "mp_match_can_clinch");
                 string? overtimeEnabled = GetConvarValueFromCFGFile(absoluteCfgPath, "mp_overtime_enable");
                 Server.ExecuteCommand($"mp_match_can_clinch {matchCanClinch ?? "1"}");
