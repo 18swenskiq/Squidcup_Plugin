@@ -20,7 +20,7 @@ namespace Squidcup
 
         public override string ModuleDescription => "A plugin for running and managing CS2 practice/pugs/scrims/matches!";
 
-        public string chatPrefix = $"[{ChatColors.Green}Squidcup{ChatColors.Default}]";
+        public string chatPrefix = $"[{ChatColors.Blue}Squidcup{ChatColors.Default}]";
         public string adminChatPrefix = $"[{ChatColors.Red}ADMIN{ChatColors.Default}]";
 
         // Plugin start phase data
