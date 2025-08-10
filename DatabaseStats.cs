@@ -225,7 +225,7 @@ namespace Squidcup
                 enemies_flashed INT NOT NULL,
                 PRIMARY KEY (matchid, mapnumber, steamid64),
                 FOREIGN KEY (matchid) REFERENCES squidcup_stats_matches (matchid),
-                FOREIGN KEY (mapnumber) REFERENCES squidcup_stats_maps (mapnumber)
+                FOREIGN KEY (matchid, mapnumber) REFERENCES squidcup_stats_maps (matchid, mapnumber)
             )");
         }
 
