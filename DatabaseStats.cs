@@ -303,50 +303,80 @@ namespace Squidcup
 
         public async Task SetMapEndData(long matchId, int mapNumber, string winnerName, int t1score, int t2score, int team1SeriesScore, int team2SeriesScore)
         {
-            try
+            int maxRetries = 5;
+            int retryDelay = 2000; // 2 seconds in milliseconds
+            
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
+                try
+                {
+                    string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
 
-                string sqlQuery = $@"
-                    UPDATE squidcup_stats_maps
-                    SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
-                    WHERE matchid = @matchId AND mapNumber = @mapNumber";
+                    string sqlQuery = $@"
+                        UPDATE squidcup_stats_maps
+                        SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
+                        WHERE matchid = @matchId AND mapNumber = @mapNumber";
 
-                await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score, mapNumber });
+                    await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score, mapNumber });
 
-                sqlQuery = $@"
-                    UPDATE squidcup_stats_matches
-                    SET team1_score = @team1SeriesScore, team2_score = @team2SeriesScore
-                    WHERE matchid = @matchId";
+                    sqlQuery = $@"
+                        UPDATE squidcup_stats_matches
+                        SET team1_score = @team1SeriesScore, team2_score = @team2SeriesScore
+                        WHERE matchid = @matchId";
 
-                await connection.ExecuteAsync(sqlQuery, new { matchId, team1SeriesScore, team2SeriesScore });
+                    await connection.ExecuteAsync(sqlQuery, new { matchId, team1SeriesScore, team2SeriesScore });
 
-                Log($"[SetMapEndData] Data updated for matchId: {matchId} mapNumber: {mapNumber} winnerName: {winnerName}");
+                    Log($"[SetMapEndData] Data updated for matchId: {matchId} mapNumber: {mapNumber} winnerName: {winnerName}");
+                    return; // Success, exit the retry loop
+                }
+                catch (Exception ex)
+                {
+                    if (attempt == maxRetries)
+                    {
+                        Log($"[SetMapEndData - FATAL] Error updating data of matchId: {matchId} mapNumber: {mapNumber} after {maxRetries} attempts [ERROR]: {ex.Message}");
+                    }
+                    else
+                    {
+                        Log($"[SetMapEndData] Attempt {attempt}/{maxRetries} failed for matchId: {matchId} mapNumber: {mapNumber} [ERROR]: {ex.Message}. Retrying in {retryDelay}ms...");
+                        await Task.Delay(retryDelay);
+                    }
+                }
             }
-            catch (Exception ex)
-            {
-                Log($"[SetMapEndData - FATAL] Error updating data of matchId: {matchId} mapNumber: {mapNumber} [ERROR]: {ex.Message}");
-            } 
         }
 
         public async Task SetMatchEndData(long matchId, string winnerName, int t1score, int t2score)
         {
-            try
+            int maxRetries = 5;
+            int retryDelay = 2000; // 2 seconds in milliseconds
+            
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
+                try
+                {
+                    string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
 
-                string sqlQuery = $@"
-                    UPDATE squidcup_stats_matches
-                    SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
-                    WHERE matchid = @matchId";
+                    string sqlQuery = $@"
+                        UPDATE squidcup_stats_matches
+                        SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
+                        WHERE matchid = @matchId";
 
-                await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score });
+                    await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score });
 
-                Log($"[SetMatchEndData] Data updated for matchId: {matchId} winnerName: {winnerName}");
-            }
-            catch (Exception ex)
-            {
-                Log($"[SetMatchEndData - FATAL] Error updating data of matchId: {matchId} [ERROR]: {ex.Message}");
+                    Log($"[SetMatchEndData] Data updated for matchId: {matchId} winnerName: {winnerName}");
+                    return; // Success, exit the retry loop
+                }
+                catch (Exception ex)
+                {
+                    if (attempt == maxRetries)
+                    {
+                        Log($"[SetMatchEndData - FATAL] Error updating data of matchId: {matchId} after {maxRetries} attempts [ERROR]: {ex.Message}");
+                    }
+                    else
+                    {
+                        Log($"[SetMatchEndData] Attempt {attempt}/{maxRetries} failed for matchId: {matchId} [ERROR]: {ex.Message}. Retrying in {retryDelay}ms...");
+                        await Task.Delay(retryDelay);
+                    }
+                }
             }
         }
 

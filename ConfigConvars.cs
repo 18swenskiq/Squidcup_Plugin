@@ -20,7 +20,7 @@ namespace Squidcup
 
         public FakeConVar<bool> everyoneIsAdmin = new("squidcup_everyone_is_admin", "If set to true, all the players will have admin privilege. Default: false", false);
 
-        public FakeConVar<bool> showCreditsOnMatchStart = new("squidcup_show_credits_on_match_start", "Whether to show 'Squidcup Plugin by WD-' message on match start. Default: true", true);
+        public FakeConVar<bool> showCreditsOnMatchStart = new("squidcup_show_credits_on_match_start", "Whether to show 'Squidcup Plugin by Squidski' message on match start. Default: true", true);
 
         public FakeConVar<string> hostnameFormat = new("squidcup_hostname_format", "The server hostname to use. Set to \"\" to disable/use existing. Default: Squidcup | {TEAM1} vs {TEAM2}", "Squidcup | {TEAM1} vs {TEAM2}");
 

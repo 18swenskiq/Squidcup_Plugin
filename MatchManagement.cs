@@ -486,7 +486,26 @@ namespace Squidcup
             {
                 matchConfig.MapBanOrder = jsonDataObject["veto_mode"]!.ToObject<List<string>>()!;
             }
-            
+            if (jsonDataObject["match_end_route"] != null)
+            {
+                matchConfig.MatchEndRoute = jsonDataObject["match_end_route"]!.ToString();
+                Log($"[GetOptionalMatchValues] MatchEndRoute set to: '{matchConfig.MatchEndRoute}'");
+            }
+            if (jsonDataObject["remote_log_url"] != null)
+            {
+                matchConfig.RemoteLogURL = jsonDataObject["remote_log_url"]!.ToString();
+                Log($"[GetOptionalMatchValues] RemoteLogURL set to: '{matchConfig.RemoteLogURL}'");
+            }
+            if (jsonDataObject["remote_log_header_key"] != null)
+            {
+                matchConfig.RemoteLogHeaderKey = jsonDataObject["remote_log_header_key"]!.ToString();
+                Log($"[GetOptionalMatchValues] RemoteLogHeaderKey set to: '{matchConfig.RemoteLogHeaderKey}'");
+            }
+            if (jsonDataObject["remote_log_header_value"] != null)
+            {
+                matchConfig.RemoteLogHeaderValue = jsonDataObject["remote_log_header_value"]!.ToString();
+                Log($"[GetOptionalMatchValues] RemoteLogHeaderValue set to: '{matchConfig.RemoteLogHeaderValue}'");
+            }
         }
 
         public void HandleTeamNameChangeCommand(CCSPlayerController? player, string teamName, int teamNum) {
@@ -600,12 +619,53 @@ namespace Squidcup
             };
 
             Task.Run(async () => {
-                await database.SetMatchEndData(matchId, winnerName ?? "Draw", t1score > t2score ? 1 : 0, t2score > t1score ? 1 : 0);
-                // Making sure that map end event is fired first
-                await Task.Delay(2000);
-                await SendEventAsync(seriesResultEvent);
-                // Send match end notification to MatchEndRoute
-                await SendMatchEndNotificationAsync(matchId);
+                try
+                {
+                    Log($"[EndSeries] Starting match end operations for matchId: {matchId}");
+                    
+                    try
+                    {
+                        await database.SetMatchEndData(matchId, winnerName ?? "Draw", t1score > t2score ? 1 : 0, t2score > t1score ? 1 : 0);
+                        Log($"[EndSeries] Successfully set match end data for matchId: {matchId}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"[EndSeries - ERROR] Failed to set match end data for matchId: {matchId} [ERROR]: {ex.Message}");
+                    }
+                    
+                    try
+                    {
+                        // Making sure that map end event is fired first
+                        await Task.Delay(2000);
+                        Log($"[EndSeries] Sending series result event for matchId: {matchId}");
+                        await SendEventAsync(seriesResultEvent);
+                        Log($"[EndSeries] Successfully sent series result event for matchId: {matchId}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"[EndSeries - ERROR] Failed to send series result event for matchId: {matchId} [ERROR]: {ex.Message}");
+                    }
+                    
+                    try
+                    {
+                        // Send match end notification to MatchEndRoute
+                        Log($"[EndSeries] Sending match end notification for matchId: {matchId}");
+                        await SendMatchEndNotificationAsync(matchId);
+                        Log($"[EndSeries] Successfully sent match end notification for matchId: {matchId}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"[EndSeries - ERROR] Failed to send match end notification for matchId: {matchId} [ERROR]: {ex.Message}");
+                        Log($"[EndSeries - ERROR] Exception details: {ex}");
+                    }
+                    
+                    Log($"[EndSeries] Completed all match end operations for matchId: {matchId}");
+                }
+                catch (Exception ex)
+                {
+                    Log($"[EndSeries - FATAL] Unexpected error in match end operations for matchId: {matchId} [ERROR]: {ex.Message}");
+                    Log($"[EndSeries - FATAL] Exception details: {ex}");
+                }
             });
 
             if (resetCvarsOnSeriesEnd) ResetChangedConvars();

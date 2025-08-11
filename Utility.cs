@@ -829,7 +829,7 @@ namespace Squidcup
             }
             if (showCreditsOnMatchStart.Value)
             {
-                Server.PrintToChatAll($"{chatPrefix} {ChatColors.Green}Squidcup{ChatColors.Default} Plugin by {ChatColors.Green}WD-{ChatColors.Default}");
+                Server.PrintToChatAll($"{chatPrefix} {ChatColors.Green}Squidcup{ChatColors.Default} Plugin by {ChatColors.Green}Squidski{ChatColors.Default}");
             }
             if (matchStartMessage.Value.Trim() != "" && matchStartMessage.Value.Trim() != "\"\"")
             {
