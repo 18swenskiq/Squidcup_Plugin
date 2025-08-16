@@ -380,8 +380,16 @@ namespace Squidcup
 
                 if (player == null) {
                     // Somehow we did not had the player in playerData, hence updating the maps again before getting the player
+                    Log($"[EventPlayerChat] Player with userId {playerUserId} not found in playerData, updating maps and retrying");
                     UpdatePlayersMap();
-                    player = playerData[playerUserId];
+                    
+                    if (playerData.TryGetValue(playerUserId, out CCSPlayerController? retryValue)) {
+                        player = retryValue;
+                        Log($"[EventPlayerChat] Player with userId {playerUserId} found after UpdatePlayersMap");
+                    } else {
+                        Log($"[EventPlayerChat] Player with userId {playerUserId} still not found after UpdatePlayersMap, skipping chat processing");
+                        return HookResult.Continue;
+                    }
                 }
 
                 // Handling player commands
