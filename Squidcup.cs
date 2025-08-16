@@ -14,7 +14,7 @@ namespace Squidcup
     {
 
         public override string ModuleName => "Squidcup";
-        public override string ModuleVersion => "0.9.2";
+        public override string ModuleVersion => "0.9.3";
 
         public override string ModuleAuthor => "Squidski (https://github.com/18swenskiq)";
 
