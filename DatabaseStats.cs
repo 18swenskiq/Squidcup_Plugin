@@ -18,30 +18,32 @@ namespace Squidcup
 {
     public class Database
     {
-        private IDbConnection connection;
-
-        DatabaseConfig? config;
+        private string connectionString;
+        private DatabaseConfig? config;
         public DatabaseType databaseType { get; set; }
 
         public void InitializeDatabase(string directory)
         {
-            ConnectDatabase(directory);
+            SetupConnectionString(directory);
             try
             {
-                connection.Open();
-                string dbType = (connection is SqliteConnection) ? "SQLite" : "MySQL";
-                Log($"[InitializeDatabase] {dbType} Database connection successful");
+                using (var connection = CreateConnection())
+                {
+                    connection.Open();
+                    string dbType = (connection is SqliteConnection) ? "SQLite" : "MySQL";
+                    Log($"[InitializeDatabase] {dbType} Database connection successful");
 
-                // Create the `squidcup_stats_matches`, `squidcup_stats_players` and `squidcup_stats_maps` tables if they doesn't exist
-                if (connection is SqliteConnection) {
-                    CreateRequiredTablesSQLite();
-                } else {
-                    CreateRequiredTablesSQL();
+                    // Create the required tables
+                    if (connection is SqliteConnection) {
+                        CreateRequiredTablesSQLite(connection);
+                    } else {
+                        CreateRequiredTablesSQL(connection);
+                    }
+
+                    Log("[InitializeDatabase] Table squidcup_stats_matches created (or already exists)");
+                    Log("[InitializeDatabase] Table squidcup_stats_players created (or already exists)");
+                    Log("[InitializeDatabase] Table squidcup_stats_maps created (or already exists)");
                 }
-
-                Log("[InitializeDatabase] Table squidcup_stats_matches created (or already exists)");
-                Log("[InitializeDatabase] Table squidcup_stats_players created (or already exists)");
-                Log("[InitializeDatabase] Table squidcup_stats_maps created (or already exists)");
             }
             catch (Exception ex)
             {
@@ -49,7 +51,24 @@ namespace Squidcup
             }
         }
 
-        public void ConnectDatabase(string directory)
+        private IDbConnection CreateConnection()
+        {
+            if (databaseType == DatabaseType.SQLite)
+            {
+                return new SqliteConnection(connectionString);
+            }
+            else if (databaseType == DatabaseType.MySQL)
+            {
+                return new MySqlConnection(connectionString);
+            }
+            else
+            {
+                Log($"[CreateConnection] Invalid database type, defaulting to SQLite");
+                return new SqliteConnection(connectionString);
+            }
+        }
+
+        public void SetupConnectionString(string directory)
         {
             try
             {
@@ -57,19 +76,16 @@ namespace Squidcup
 
                 if (databaseType == DatabaseType.SQLite)
                 {
-                    connection =
-                        new SqliteConnection(
-                            $"Data Source={Path.Join(directory, "squidcup.db")}");
+                    connectionString = $"Data Source={Path.Join(directory, "squidcup.db")}";
                 }
                 else if (config != null && databaseType == DatabaseType.MySQL)
                 {
-                    string connectionString = $"Server={config.MySqlHost};Port={config.MySqlPort};Database={config.MySqlDatabase};User Id={config.MySqlUsername};Password={config.MySqlPassword};";
-                    connection = new MySqlConnection(connectionString);           
+                    connectionString = $"Server={config.MySqlHost};Port={config.MySqlPort};Database={config.MySqlDatabase};User Id={config.MySqlUsername};Password={config.MySqlPassword};";
                 }
                 else
                 {
                     Log($"[InitializeDatabase] Invalid database specified, using SQLite.");
-                    connection = new SqliteConnection($"Data Source={Path.Join(directory, "squidcup.db")}");
+                    connectionString = $"Data Source={Path.Join(directory, "squidcup.db")}";
                     databaseType = DatabaseType.SQLite;
                 }
             } 
@@ -77,10 +93,9 @@ namespace Squidcup
             {
                 Log($"[InitializeDatabase - FATAL] Database connection error: {ex.Message}");
             }
-
         }
 
-        public void CreateRequiredTablesSQLite()
+        public void CreateRequiredTablesSQLite(IDbConnection connection)
         {
             connection.Execute($@"
             CREATE TABLE IF NOT EXISTS squidcup_stats_matches (
@@ -154,7 +169,7 @@ namespace Squidcup
                 )");
         }
 
-        public void CreateRequiredTablesSQL()
+        public void CreateRequiredTablesSQL(IDbConnection connection)
         {
             connection.Execute($@"
                 CREATE TABLE IF NOT EXISTS squidcup_stats_matches (
@@ -233,53 +248,85 @@ namespace Squidcup
         {
             try
             {
-                string mapName = Server.MapName;
-                string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
+                using (var connection = CreateConnection())
+                {
+                    connection.Open();
+                    
+                    string mapName = Server.MapName;
+                    string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
 
-                if (mapNumber == 0) {
-                    if (isMatchSetup && liveMatchId != -1) {
-                        connection.Execute(@"
-                            INSERT INTO squidcup_stats_matches (matchid, start_time, team1_name, team2_name, series_type, server_ip)
-                            VALUES (@liveMatchId, " + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
-                            new { liveMatchId, team1name, team2name, seriesType, serverIp });
-                    } else {
-                        connection.Execute(@"
-                            INSERT INTO squidcup_stats_matches (start_time, team1_name, team2_name, series_type, server_ip)
-                            VALUES (" + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
-                            new { team1name, team2name, seriesType, serverIp });
+                    Log($"[InitMatch] Starting match initialization - isMatchSetup: {isMatchSetup}, liveMatchId: {liveMatchId}, mapNumber: {mapNumber}");
+
+                    if (mapNumber == 0) {
+                        if (isMatchSetup && liveMatchId != -1) {
+                            // Check if the match already exists
+                            var existingMatch = connection.QuerySingleOrDefault<long?>("SELECT matchid FROM squidcup_stats_matches WHERE matchid = @liveMatchId", new { liveMatchId });
+                            
+                            if (existingMatch == null) {
+                                connection.Execute(@"
+                                    INSERT INTO squidcup_stats_matches (matchid, start_time, team1_name, team2_name, series_type, server_ip)
+                                    VALUES (@liveMatchId, " + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
+                                    new { liveMatchId, team1name, team2name, seriesType, serverIp });
+                                Log($"[InitMatch] Created new match record with matchid: {liveMatchId}");
+                            } else {
+                                Log($"[InitMatch] Match record with matchid: {liveMatchId} already exists, skipping insertion");
+                            }
+                        } else {
+                            connection.Execute(@"
+                                INSERT INTO squidcup_stats_matches (start_time, team1_name, team2_name, series_type, server_ip)
+                                VALUES (" + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
+                                new { team1name, team2name, seriesType, serverIp });
+                            Log($"[InitMatch] Created new match record (auto-generated matchid)");
+                        }
                     }
-                }
 
-                if (isMatchSetup && liveMatchId != -1) {
+                    if (isMatchSetup && liveMatchId != -1) {
+                        // Check if the map record already exists for this match and map number
+                        var existingMap = connection.QuerySingleOrDefault<long?>("SELECT matchid FROM squidcup_stats_maps WHERE matchid = @liveMatchId AND mapnumber = @mapNumber", new { liveMatchId, mapNumber });
+                        
+                        if (existingMap == null) {
+                            connection.Execute(@"
+                                INSERT INTO squidcup_stats_maps (matchid, start_time, mapnumber, mapname)
+                                VALUES (@liveMatchId, " + dateTimeExpression + ", @mapNumber, @mapName)",
+                                new { liveMatchId, mapNumber, mapName });
+                            Log($"[InitMatch] Created new map record with matchid: {liveMatchId}, mapnumber: {mapNumber}");
+                        } else {
+                            Log($"[InitMatch] Map record with matchid: {liveMatchId}, mapnumber: {mapNumber} already exists, skipping insertion");
+                        }
+                        
+                        // Verify the records were created/exist
+                        var verifyMatch = connection.QuerySingleOrDefault<long?>("SELECT matchid FROM squidcup_stats_matches WHERE matchid = @liveMatchId", new { liveMatchId });
+                        var verifyMap = connection.QuerySingleOrDefault<long?>("SELECT matchid FROM squidcup_stats_maps WHERE matchid = @liveMatchId AND mapnumber = @mapNumber", new { liveMatchId, mapNumber });
+                        
+                        Log($"[InitMatch] Verification - Match exists: {verifyMatch != null}, Map exists: {verifyMap != null}");
+                        
+                        return liveMatchId;
+                    }
+
+                    // Retrieve the last inserted match_id
+                    long matchId = -1;
+                    if (connection is SqliteConnection)
+                    {
+                        matchId = connection.ExecuteScalar<long>("SELECT last_insert_rowid()");
+                    }
+                    else if (connection is MySqlConnection)
+                    {
+                        matchId = connection.ExecuteScalar<long>("SELECT LAST_INSERT_ID()");
+                    }
+
                     connection.Execute(@"
                         INSERT INTO squidcup_stats_maps (matchid, start_time, mapnumber, mapname)
-                        VALUES (@liveMatchId, " + dateTimeExpression + ", @mapNumber, @mapName)",
-                        new { liveMatchId, mapNumber, mapName });
-                    return liveMatchId;
-                }
+                        VALUES (@matchId, " + dateTimeExpression + ", @mapNumber, @mapName)",
+                        new { matchId, mapNumber, mapName });
 
-                // Retrieve the last inserted match_id
-                long matchId = -1;
-                if (connection is SqliteConnection)
-                {
-                    matchId = connection.ExecuteScalar<long>("SELECT last_insert_rowid()");
+                    Log($"[InitMatch] Data inserted into squidcup_stats_matches with match_id: {matchId}");
+                    return matchId;
                 }
-                else if (connection is MySqlConnection)
-                {
-                    matchId = connection.ExecuteScalar<long>("SELECT LAST_INSERT_ID()");
-                }
-
-                connection.Execute(@"
-                    INSERT INTO squidcup_stats_maps (matchid, start_time, mapnumber, mapname)
-                    VALUES (@matchId, " + dateTimeExpression + ", @mapNumber, @mapName)",
-                    new { matchId, mapNumber, mapName });
-
-                Log($"[InsertMatchData] Data inserted into squidcup_stats_matches with match_id: {matchId}");
-                return matchId;
             }
             catch (Exception ex)
             {
-                Log($"[InsertMatchData - FATAL] Error inserting data: {ex.Message}");
+                Log($"[InitMatch - FATAL] Error inserting data for matchId: {liveMatchId}, mapNumber: {mapNumber} [ERROR]: {ex.Message}");
+                Log($"[InitMatch - FATAL] Stack trace: {ex.StackTrace}");
                 return liveMatchId;
             }
         }
@@ -287,13 +334,18 @@ namespace Squidcup
         public void UpdateTeamData(int matchId, string team1name, string team2name) {
             try
             {
-                connection.Execute(@"
-                    UPDATE squidcup_stats_matches
-                    SET team1_name = @team1name, team2_name = @team2name
-                    WHERE matchid = @matchId",
-                    new { matchId, team1name, team2name });
+                using (var connection = CreateConnection())
+                {
+                    connection.Open();
+                    
+                    connection.Execute(@"
+                        UPDATE squidcup_stats_matches
+                        SET team1_name = @team1name, team2_name = @team2name
+                        WHERE matchid = @matchId",
+                        new { matchId, team1name, team2name });
 
-                Log($"[UpdateTeamData] Data updated for matchId: {matchId} team1name: {team1name} team2name: {team2name}");
+                    Log($"[UpdateTeamData] Data updated for matchId: {matchId} team1name: {team1name} team2name: {team2name}");
+                }
             }
             catch (Exception ex)
             {
@@ -310,24 +362,39 @@ namespace Squidcup
             {
                 try
                 {
-                    string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
+                    using (var connection = CreateConnection())
+                    {
+                        connection.Open();
+                        
+                        string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
 
-                    string sqlQuery = $@"
-                        UPDATE squidcup_stats_maps
-                        SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
-                        WHERE matchid = @matchId AND mapNumber = @mapNumber";
+                        string sqlQuery = $@"
+                            UPDATE squidcup_stats_maps
+                            SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
+                            WHERE matchid = @matchId AND mapNumber = @mapNumber";
 
-                    await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score, mapNumber });
+                        int mapsRowsAffected = await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score, mapNumber });
 
-                    sqlQuery = $@"
-                        UPDATE squidcup_stats_matches
-                        SET team1_score = @team1SeriesScore, team2_score = @team2SeriesScore
-                        WHERE matchid = @matchId";
+                        sqlQuery = $@"
+                            UPDATE squidcup_stats_matches
+                            SET team1_score = @team1SeriesScore, team2_score = @team2SeriesScore
+                            WHERE matchid = @matchId";
 
-                    await connection.ExecuteAsync(sqlQuery, new { matchId, team1SeriesScore, team2SeriesScore });
+                        int matchesRowsAffected = await connection.ExecuteAsync(sqlQuery, new { matchId, team1SeriesScore, team2SeriesScore });
 
-                    Log($"[SetMapEndData] Data updated for matchId: {matchId} mapNumber: {mapNumber} winnerName: {winnerName}");
-                    return; // Success, exit the retry loop
+                        Log($"[SetMapEndData] Data updated for matchId: {matchId} mapNumber: {mapNumber} winnerName: {winnerName} (Maps rows: {mapsRowsAffected}, Matches rows: {matchesRowsAffected})");
+                        
+                        if (mapsRowsAffected == 0)
+                        {
+                            Log($"[SetMapEndData - WARNING] No map record found for matchId: {matchId} mapNumber: {mapNumber} - UPDATE affected 0 rows");
+                        }
+                        if (matchesRowsAffected == 0)
+                        {
+                            Log($"[SetMapEndData - WARNING] No match record found for matchId: {matchId} - UPDATE affected 0 rows");
+                        }
+                        
+                        return; // Success, exit the retry loop
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -353,17 +420,28 @@ namespace Squidcup
             {
                 try
                 {
-                    string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
+                    using (var connection = CreateConnection())
+                    {
+                        connection.Open();
+                        
+                        string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
 
-                    string sqlQuery = $@"
-                        UPDATE squidcup_stats_matches
-                        SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
-                        WHERE matchid = @matchId";
+                        string sqlQuery = $@"
+                            UPDATE squidcup_stats_matches
+                            SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
+                            WHERE matchid = @matchId";
 
-                    await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score });
+                        int rowsAffected = await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score });
 
-                    Log($"[SetMatchEndData] Data updated for matchId: {matchId} winnerName: {winnerName}");
-                    return; // Success, exit the retry loop
+                        Log($"[SetMatchEndData] Data updated for matchId: {matchId} winnerName: {winnerName} (Rows affected: {rowsAffected})");
+                        
+                        if (rowsAffected == 0)
+                        {
+                            Log($"[SetMatchEndData - WARNING] No match record found for matchId: {matchId} - UPDATE affected 0 rows");
+                        }
+                        
+                        return; // Success, exit the retry loop
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -384,16 +462,21 @@ namespace Squidcup
         {
             try
             {
-                string sqlQuery = $@"
-                    UPDATE squidcup_stats_maps
-                    SET team1_score = @t1score, team2_score = @t2score
-                    WHERE matchid = @matchId AND mapnumber = @mapNumber";
+                using (var connection = CreateConnection())
+                {
+                    connection.Open();
+                    
+                    string sqlQuery = $@"
+                        UPDATE squidcup_stats_maps
+                        SET team1_score = @t1score, team2_score = @t2score
+                        WHERE matchid = @matchId AND mapnumber = @mapNumber";
 
-                await connection.ExecuteAsync(sqlQuery, new { matchId, mapNumber, t1score, t2score });
+                    await connection.ExecuteAsync(sqlQuery, new { matchId, mapNumber, t1score, t2score });
+                }
             }
             catch (Exception ex)
             {
-                Log($"[UpdatePlayerStats - FATAL] Error updating data of matchId: {matchId} [ERROR]: {ex.Message}");
+                Log($"[UpdateMapStatsAsync - FATAL] Error updating data of matchId: {matchId} [ERROR]: {ex.Message}");
             }
         }
 
@@ -401,13 +484,17 @@ namespace Squidcup
         {
             try
             {
-                foreach (ulong steamid64 in playerStatsDictionary.Keys)
+                using (var connection = CreateConnection())
                 {
-                    Log($"[UpdatePlayerStats] Going to update data for Match: {matchId}, MapNumber: {mapNumber}, Player: {steamid64}");
+                    connection.Open();
 
-                    var playerStats = playerStatsDictionary[steamid64];
+                    foreach (ulong steamid64 in playerStatsDictionary.Keys)
+                    {
+                        Log($"[UpdatePlayerStats] Going to update data for Match: {matchId}, MapNumber: {mapNumber}, Player: {steamid64}");
 
-                    string sqlQuery = $@"
+                        var playerStats = playerStatsDictionary[steamid64];
+
+                        string sqlQuery = $@"
                     INSERT INTO squidcup_stats_players (
                         matchid, mapnumber, steamid64, team, name, kills, deaths, damage, assists,
                         enemy5ks, enemy4ks, enemy3ks, enemy2ks, utility_count, utility_damage,
@@ -501,6 +588,7 @@ namespace Squidcup
                         });
 
                     Log($"[UpdatePlayerStats] Data inserted/updated for player {steamid64} in match {matchId}");
+                    }
                 }
             }
             catch (Exception ex)
@@ -522,40 +610,45 @@ namespace Squidcup
                     }
                 }
 
-                using (var writer = new StreamWriter(csvFilePath))
-                using (var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)))
+                using (var connection = CreateConnection())
                 {
-                    IEnumerable<dynamic> playerStatsData = await connection.QueryAsync(
-                        "SELECT * FROM squidcup_stats_players WHERE matchid = @MatchId AND mapnumber = @MapNumber ORDER BY team, kills DESC", new { MatchId = matchId, MapNumber = mapNumber });
-
-                    // Use the first data row to get the column names
-                    dynamic? firstDataRow = playerStatsData.FirstOrDefault();
-                    if (firstDataRow != null)
+                    connection.Open();
+                    
+                    using (var writer = new StreamWriter(csvFilePath))
+                    using (var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)))
                     {
-                        foreach (var propertyName in ((IDictionary<string, object>)firstDataRow).Keys)
-                        {
-                            csv.WriteField(propertyName);
-                        }
-                        csv.NextRecord(); // End of the column names row
+                        IEnumerable<dynamic> playerStatsData = await connection.QueryAsync(
+                            "SELECT * FROM squidcup_stats_players WHERE matchid = @MatchId AND mapnumber = @MapNumber ORDER BY team, kills DESC", new { MatchId = matchId, MapNumber = mapNumber });
 
-                        // Write data to the CSV file
-                        foreach (var playerStats in playerStatsData)
+                        // Use the first data row to get the column names
+                        dynamic? firstDataRow = playerStatsData.FirstOrDefault();
+                        if (firstDataRow != null)
                         {
-                            foreach (var propertyValue in ((IDictionary<string, object>)playerStats).Values)
+                            foreach (var propertyName in ((IDictionary<string, object>)firstDataRow).Keys)
                             {
-                                csv.WriteField(propertyValue);
+                                csv.WriteField(propertyName);
                             }
-                            csv.NextRecord();
+                            csv.NextRecord(); // End of the column names row
+
+                            // Write data to the CSV file
+                            foreach (var playerStats in playerStatsData)
+                            {
+                                foreach (var propertyValue in ((IDictionary<string, object>)playerStats).Values)
+                                {
+                                    csv.WriteField(propertyValue);
+                                }
+                                csv.NextRecord();
+                            }
                         }
                     }
                 }
+                
                 Log($"[WritePlayerStatsToCsv] Match stats for ID: {matchId} written successfully at: {csvFilePath}");
             }
             catch (Exception ex)
             {
                 Log($"[WritePlayerStatsToCsv - FATAL] Error writing data: {ex.Message}");
             }
-
         }
 
         private void CreateDefaultConfigFile(string configFile)
