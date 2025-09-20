@@ -414,6 +414,8 @@ namespace Squidcup
         {
             try
             {
+                Log($"[ResetMatch] Starting match reset - warmupCfgRequired: {warmupCfgRequired}, current isMatchSetup: {isMatchSetup}, liveMatchId: {liveMatchId}");
+                
                 // We stop demo recording if a live match was restarted
                 if (matchStarted && isDemoRecording)
                 {
@@ -529,10 +531,13 @@ namespace Squidcup
                     unreadyPlayerMessageTimer = null;
                     unreadyPlayerMessageTimer ??= AddTimer(chatTimerDelay, SendUnreadyPlayersMessage, TimerFlags.REPEAT);
                 }
+                
+                Log($"[ResetMatch] Match reset completed successfully - isMatchSetup: {isMatchSetup}, liveMatchId: {liveMatchId}, matchStarted: {matchStarted}");
             }
             catch (Exception ex)
             {
                 Log($"[ResetMatch - FATAL] [ERROR]: {ex.Message}");
+                Log($"[ResetMatch - FATAL] Stack trace: {ex.StackTrace}");
             }
         }
 

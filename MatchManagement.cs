@@ -670,8 +670,20 @@ namespace Squidcup
 
             if (resetCvarsOnSeriesEnd) ResetChangedConvars();
             isMatchLive = false;
+            
+            Log($"[EndSeries] Scheduling ResetMatch call in {restartDelay} seconds for matchId: {matchId}");
             AddTimer(restartDelay, () => {
-                ResetMatch(false);
+                try 
+                {
+                    Log($"[EndSeries] Executing delayed ResetMatch for matchId: {matchId}");
+                    ResetMatch(false);
+                    Log($"[EndSeries] Successfully completed ResetMatch for matchId: {matchId}. isMatchSetup is now: {isMatchSetup}");
+                }
+                catch (Exception ex)
+                {
+                    Log($"[EndSeries - FATAL] Error in delayed ResetMatch for matchId: {matchId} [ERROR]: {ex.Message}");
+                    Log($"[EndSeries - FATAL] Stack trace: {ex.StackTrace}");
+                }
             });
         }
 

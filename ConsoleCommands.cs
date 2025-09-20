@@ -541,6 +541,92 @@ namespace Squidcup
             }
         }
 
+        [ConsoleCommand("css_match_status", "Shows current match state information")]
+        [ConsoleCommand("squidcup_match_status", "Shows current match state information")]
+        public void OnMatchStatusCommand(CCSPlayerController? player, CommandInfo? command)
+        {
+            if (IsPlayerAdmin(player, "css_match_status", "@css/config"))
+            {
+                string status = $@"
+=== SQUIDCUP PLUGIN STATE ===
+isMatchSetup: {isMatchSetup}
+liveMatchId: {liveMatchId}
+matchStarted: {matchStarted}
+isMatchLive: {isMatchLive}
+isWarmup: {isWarmup}
+readyAvailable: {readyAvailable}
+isPaused: {isPaused}
+isKnifeRound: {isKnifeRound}
+isSideSelectionPhase: {isSideSelectionPhase}
+isPractice: {isPractice}
+isDryRun: {isDryRun}
+isVeto: {isVeto}
+isPreVeto: {isPreVeto}
+==========================";
+
+                Log($"[MatchStatus] Plugin state requested by {(player?.PlayerName ?? "Console")}:{status}");
+                
+                if (player == null)
+                {
+                    // Console request - print to console
+                    Server.PrintToConsole(status);
+                }
+                else
+                {
+                    // Player request - send as chat message
+                    string[] lines = status.Split('\n');
+                    foreach (string line in lines)
+                    {
+                        if (!string.IsNullOrWhiteSpace(line))
+                        {
+                            ReplyToUserCommand(player, line);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                SendPlayerNotAdminMessage(player);
+            }
+        }
+
+        [ConsoleCommand("css_force_reset_state", "Force resets the plugin match state (use when stuck)")]
+        [ConsoleCommand("squidcup_force_reset_state", "Force resets the plugin match state (use when stuck)")]
+        public void OnForceResetStateCommand(CCSPlayerController? player, CommandInfo? command)
+        {
+            if (IsPlayerAdmin(player, "css_force_reset_state", "@css/config"))
+            {
+                Log($"[ForceResetState] Admin force reset initiated by {(player?.PlayerName ?? "Console")} - Current state: isMatchSetup={isMatchSetup}, liveMatchId={liveMatchId}, matchStarted={matchStarted}");
+                
+                // Force reset all match state variables
+                isMatchSetup = false;
+                liveMatchId = -1;
+                matchStarted = false;
+                isMatchLive = false;
+                isWarmup = true;
+                readyAvailable = true;
+                isPaused = false;
+                isKnifeRound = false;
+                isSideSelectionPhase = false;
+                isPractice = false;
+                isDryRun = false;
+                isVeto = false;
+                isPreVeto = false;
+                
+                // Kill any active timers
+                KillPhaseTimers();
+                
+                Log($"[ForceResetState] Plugin state forcefully reset - New state: isMatchSetup={isMatchSetup}, liveMatchId={liveMatchId}, matchStarted={matchStarted}");
+                
+                ReplyToUserCommand(player, "Plugin match state has been forcefully reset. You can now load a new match.");
+                PrintToAllChat($"{ChatColors.Red}[ADMIN]{ChatColors.Default} Plugin match state has been forcefully reset by an administrator.");
+            }
+            else
+            {
+                SendPlayerNotAdminMessage(player);
+            }
+        }
+
         [ConsoleCommand("css_restart", "Restarts the match")]
         [ConsoleCommand("css_rr", "Restarts the match")]
         public void OnRestartMatchCommand(CCSPlayerController? player, CommandInfo? command)
