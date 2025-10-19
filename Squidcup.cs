@@ -14,7 +14,7 @@ namespace Squidcup
     {
 
         public override string ModuleName => "Squidcup";
-        public override string ModuleVersion => "0.9.5";
+        public override string ModuleVersion => "0.9.6";
 
         public override string ModuleAuthor => "Squidski (https://github.com/18swenskiq)";
 
@@ -545,7 +545,7 @@ namespace Squidcup
             RegisterEventHandler<EventMolotovDetonate>(EventMolotovDetonateHandler);
             RegisterEventHandler<EventDecoyStarted>(EventDecoyDetonateHandler);
 
-            Console.WriteLine($"[{ModuleName} {ModuleVersion} LOADED] Squidcup by WD- (https://github.com/shobhit-pathak/)");
+            Console.WriteLine($"[{ModuleName} {ModuleVersion} LOADED] Squidcup by Squidski (https://github.com/shobhit-pathak/)");
         }
     }
 }

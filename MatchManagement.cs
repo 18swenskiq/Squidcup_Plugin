@@ -87,11 +87,13 @@ namespace Squidcup
         public void LoadMatchFromURL(CCSPlayerController? player, CommandInfo command)
         {
             if (player != null) return;
-            if (isMatchSetup)
+            // Check if there's an active match that should block loading
+            // Only block if match is setup AND either live or in a state where it hasn't properly ended yet
+            if (isMatchSetup && (isMatchLive || matchStarted || liveMatchId > 0))
             {
                 // command.ReplyToCommand($"[LoadMatchDataCommand] A match is already setup with id: {liveMatchId}, cannot load a new match!");
                 ReplyToUserCommand(player, Localizer["squidcup.mm.get5matchisalreadysetup", liveMatchId]);
-                Log($"[LoadMatchDataCommand] A match is already setup with id: {liveMatchId}, cannot load a new match!");
+                Log($"[LoadMatchDataCommand] A match is already setup with id: {liveMatchId}, cannot load a new match! Current state: isMatchLive={isMatchLive}, matchStarted={matchStarted}, liveMatchId={liveMatchId}");
                 return;
             }
             string url = command.ArgByIndex(1);
@@ -100,6 +102,7 @@ namespace Squidcup
             string headerValue = command.ArgCount > 3 ? command.ArgByIndex(3) : "";
 
             Log($"[LoadMatchDataCommand] Match setup request received with URL: {url} headerName: {headerName} and headerValue: {headerValue}");
+            Log($"[LoadMatchDataCommand] Current plugin state - isMatchSetup: {isMatchSetup}, isMatchLive: {isMatchLive}, matchStarted: {matchStarted}, liveMatchId: {liveMatchId}");
 
             if (!IsValidUrl(url))
             {
@@ -671,6 +674,13 @@ namespace Squidcup
             if (resetCvarsOnSeriesEnd) ResetChangedConvars();
             isMatchLive = false;
             
+            // Reset critical match state immediately to prevent race conditions
+            // This allows new matches to be loaded while the cleanup timer is still running
+            isMatchSetup = false;
+            liveMatchId = -1;
+            matchStarted = false;
+            
+            Log($"[EndSeries] Immediately reset critical match state - isMatchSetup: {isMatchSetup}, liveMatchId: {liveMatchId}");
             Log($"[EndSeries] Scheduling ResetMatch call in {restartDelay} seconds for matchId: {matchId}");
             AddTimer(restartDelay, () => {
                 try 

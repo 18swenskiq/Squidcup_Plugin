@@ -422,7 +422,7 @@ namespace Squidcup
                     Server.ExecuteCommand($"tv_stoprecord");
                     isDemoRecording = false;
                 }
-                // Reset match data
+                // Reset match data (some may already be reset in EndSeries to prevent race conditions)
                 matchStarted = false;
                 readyAvailable = true;
                 isPaused = false;
