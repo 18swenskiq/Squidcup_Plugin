@@ -1,8 +1,3 @@
 {
-    "DatabaseType": "SQLite",
-    "MySqlHost": "your_mysql_host",
-    "MySqlDatabase": "your_mysql_database",
-    "MySqlUsername": "your_mysql_username",
-    "MySqlPassword": "your_mysql_password",
-    "MySqlPort": 3306
+  "ApiBaseUrl": "https://9zea3urakj.execute-api.us-east-1.amazonaws.com/prod/"
 }

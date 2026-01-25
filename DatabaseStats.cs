@@ -1,726 +1,477 @@
 using System;
 using System.IO;
-using System.Data;
+using System.Net.Http;
+using System.Text;
 using System.Text.Json;
-using System.Globalization;
-using Microsoft.Data.Sqlite;
-using Dapper;
+using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
-using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
-using CsvHelper;
-using CsvHelper.Configuration;
-using MySqlConnector;
-
-
 
 namespace Squidcup
 {
-    public class Database
+    public class StatsApiClient
     {
-        private string connectionString;
-        private DatabaseConfig? config;
-        public DatabaseType databaseType { get; set; }
+        private readonly HttpClient httpClient;
+        private string apiBaseUrl = "";
+        private string pendingQueuePath = "";
+        private readonly object queueLock = new();
 
-        public void InitializeDatabase(string directory)
+        public StatsApiClient()
         {
-            SetupConnectionString(directory);
-            try
-            {
-                using (var connection = CreateConnection())
-                {
-                    connection.Open();
-                    string dbType = (connection is SqliteConnection) ? "SQLite" : "MySQL";
-                    Log($"[InitializeDatabase] {dbType} Database connection successful");
-
-                    // Create the required tables
-                    if (connection is SqliteConnection) {
-                        CreateRequiredTablesSQLite(connection);
-                    } else {
-                        CreateRequiredTablesSQL(connection);
-                    }
-
-                    Log("[InitializeDatabase] Table squidcup_stats_matches created (or already exists)");
-                    Log("[InitializeDatabase] Table squidcup_stats_players created (or already exists)");
-                    Log("[InitializeDatabase] Table squidcup_stats_maps created (or already exists)");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"[InitializeDatabase - FATAL] Database connection or table creation error: {ex.Message}");
-            }
+            httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(10);
         }
 
-        private IDbConnection CreateConnection()
+        public void Initialize(string moduleDirectory)
         {
-            if (databaseType == DatabaseType.SQLite)
-            {
-                return new SqliteConnection(connectionString);
-            }
-            else if (databaseType == DatabaseType.MySQL)
-            {
-                return new MySqlConnection(connectionString);
-            }
-            else
-            {
-                Log($"[CreateConnection] Invalid database type, defaulting to SQLite");
-                return new SqliteConnection(connectionString);
-            }
-        }
-
-        public void SetupConnectionString(string directory)
-        {
-            try
-            {
-                SetDatabaseConfig(directory);
-
-                if (databaseType == DatabaseType.SQLite)
-                {
-                    connectionString = $"Data Source={Path.Join(directory, "squidcup.db")}";
-                }
-                else if (config != null && databaseType == DatabaseType.MySQL)
-                {
-                    connectionString = $"Server={config.MySqlHost};Port={config.MySqlPort};Database={config.MySqlDatabase};User Id={config.MySqlUsername};Password={config.MySqlPassword};";
-                }
-                else
-                {
-                    Log($"[InitializeDatabase] Invalid database specified, using SQLite.");
-                    connectionString = $"Data Source={Path.Join(directory, "squidcup.db")}";
-                    databaseType = DatabaseType.SQLite;
-                }
-            } 
-            catch (Exception ex)
-            {
-                Log($"[InitializeDatabase - FATAL] Database connection error: {ex.Message}");
-            }
-        }
-
-        public void CreateRequiredTablesSQLite(IDbConnection connection)
-        {
-            connection.Execute($@"
-            CREATE TABLE IF NOT EXISTS squidcup_stats_matches (
-                matchid INTEGER PRIMARY KEY AUTOINCREMENT,
-                start_time DATETIME NOT NULL,
-                end_time DATETIME DEFAULT NULL,
-                winner TEXT NOT NULL DEFAULT '',
-                series_type TEXT NOT NULL DEFAULT '',
-                team1_name TEXT NOT NULL DEFAULT '',
-                team1_score INTEGER NOT NULL DEFAULT 0,
-                team2_name TEXT NOT NULL DEFAULT '',
-                team2_score INTEGER NOT NULL DEFAULT 0,
-                server_ip TEXT NOT NULL DEFAULT '0'
-            )");
-
-            connection.Execute(@"
-                CREATE TABLE IF NOT EXISTS squidcup_stats_maps (
-                    matchid INTEGER NOT NULL,
-                    mapnumber INTEGER NOT NULL,
-                    start_time DATETIME NOT NULL,
-                    end_time DATETIME DEFAULT NULL,
-                    winner TEXT NOT NULL DEFAULT '',
-                    mapname TEXT NOT NULL DEFAULT '',
-                    team1_score INTEGER NOT NULL DEFAULT 0,
-                    team2_score INTEGER NOT NULL DEFAULT 0,
-                    PRIMARY KEY (matchid, mapnumber),
-                    FOREIGN KEY (matchid) REFERENCES squidcup_stats_matches (matchid)
-                )");
-
-            connection.Execute(@"
-                CREATE TABLE IF NOT EXISTS squidcup_stats_players (
-                    matchid INTEGER NOT NULL,
-                    mapnumber INTEGER NOT NULL,
-                    steamid64 INTEGER NOT NULL,
-                    team TEXT NOT NULL DEFAULT '',
-                    name TEXT NOT NULL,
-                    kills INTEGER NOT NULL,
-                    deaths INTEGER NOT NULL,
-                    damage INTEGER NOT NULL,
-                    assists INTEGER NOT NULL,
-                    enemy5ks INTEGER NOT NULL,
-                    enemy4ks INTEGER NOT NULL,
-                    enemy3ks INTEGER NOT NULL,
-                    enemy2ks INTEGER NOT NULL,
-                    utility_count INTEGER NOT NULL,
-                    utility_damage INTEGER NOT NULL,
-                    utility_successes INTEGER NOT NULL,
-                    utility_enemies INTEGER NOT NULL,
-                    flash_count INTEGER NOT NULL,
-                    flash_successes INTEGER NOT NULL,
-                    health_points_removed_total INTEGER NOT NULL,
-                    health_points_dealt_total INTEGER NOT NULL,
-                    shots_fired_total INTEGER NOT NULL,
-                    shots_on_target_total INTEGER NOT NULL,
-                    v1_count INTEGER NOT NULL,
-                    v1_wins INTEGER NOT NULL,
-                    v2_count INTEGER NOT NULL,
-                    v2_wins INTEGER NOT NULL,
-                    entry_count INTEGER NOT NULL,
-                    entry_wins INTEGER NOT NULL,
-                    equipment_value INTEGER NOT NULL,
-                    money_saved INTEGER NOT NULL,
-                    kill_reward INTEGER NOT NULL,
-                    live_time INTEGER NOT NULL,
-                    head_shot_kills INTEGER NOT NULL,
-                    cash_earned INTEGER NOT NULL,
-                    enemies_flashed INTEGER NOT NULL,
-                    PRIMARY KEY (matchid, mapnumber, steamid64),
-                    FOREIGN KEY (matchid) REFERENCES squidcup_stats_matches (matchid),
-                    FOREIGN KEY (matchid, mapnumber) REFERENCES squidcup_stats_maps (matchid, mapnumber)
-                )");
-        }
-
-        public void CreateRequiredTablesSQL(IDbConnection connection)
-        {
-            connection.Execute($@"
-                CREATE TABLE IF NOT EXISTS squidcup_stats_matches (
-                    matchid INT PRIMARY KEY AUTO_INCREMENT,
-                    start_time DATETIME NOT NULL,
-                    end_time DATETIME DEFAULT NULL,
-                    winner VARCHAR(255) NOT NULL DEFAULT '',
-                    series_type VARCHAR(255) NOT NULL DEFAULT '',
-                    team1_name VARCHAR(255) NOT NULL DEFAULT '',
-                    team1_score INT NOT NULL DEFAULT 0,
-                    team2_name VARCHAR(255) NOT NULL DEFAULT '',
-                    team2_score INT NOT NULL DEFAULT 0,
-                    server_ip VARCHAR(255) NOT NULL DEFAULT '0'
-                )");
-                
-            connection.Execute($@"
-            CREATE TABLE IF NOT EXISTS squidcup_stats_maps (
-                matchid INT NOT NULL,
-                mapnumber TINYINT(3) UNSIGNED NOT NULL,
-                start_time DATETIME NOT NULL,
-                end_time DATETIME DEFAULT NULL,
-                winner VARCHAR(16) NOT NULL DEFAULT '',
-                mapname VARCHAR(64) NOT NULL DEFAULT '',
-                team1_score INT NOT NULL DEFAULT 0,
-                team2_score INT NOT NULL DEFAULT 0,
-                PRIMARY KEY (matchid, mapnumber),
-                INDEX mapnumber_index (mapnumber),
-                CONSTRAINT squidcup_stats_maps_matchid FOREIGN KEY (matchid) REFERENCES squidcup_stats_matches (matchid)
-            )");
-
-            connection.Execute($@"
-            CREATE TABLE IF NOT EXISTS squidcup_stats_players (
-                matchid INT NOT NULL,
-                mapnumber TINYINT(3) UNSIGNED NOT NULL,
-                steamid64 BIGINT NOT NULL,
-                team VARCHAR(255) NOT NULL DEFAULT '',
-                name VARCHAR(255) NOT NULL,
-                kills INT NOT NULL,
-                deaths INT NOT NULL,
-                damage INT NOT NULL,
-                assists INT NOT NULL,
-                enemy5ks INT NOT NULL,
-                enemy4ks INT NOT NULL,
-                enemy3ks INT NOT NULL,
-                enemy2ks INT NOT NULL,
-                utility_count INT NOT NULL,
-                utility_damage INT NOT NULL,
-                utility_successes INT NOT NULL,
-                utility_enemies INT NOT NULL,
-                flash_count INT NOT NULL,
-                flash_successes INT NOT NULL,
-                health_points_removed_total INT NOT NULL,
-                health_points_dealt_total INT NOT NULL,
-                shots_fired_total INT NOT NULL,
-                shots_on_target_total INT NOT NULL,
-                v1_count INT NOT NULL,
-                v1_wins INT NOT NULL,
-                v2_count INT NOT NULL,
-                v2_wins INT NOT NULL,
-                entry_count INT NOT NULL,
-                entry_wins INT NOT NULL,
-                equipment_value INT NOT NULL,
-                money_saved INT NOT NULL,
-                kill_reward INT NOT NULL,
-                live_time INT NOT NULL,
-                head_shot_kills INT NOT NULL,
-                cash_earned INT NOT NULL,
-                enemies_flashed INT NOT NULL,
-                PRIMARY KEY (matchid, mapnumber, steamid64),
-                FOREIGN KEY (matchid) REFERENCES squidcup_stats_matches (matchid),
-                FOREIGN KEY (matchid, mapnumber) REFERENCES squidcup_stats_maps (matchid, mapnumber)
-            )");
-        }
-
-        public long InitMatch(string team1name, string team2name, string serverIp, bool isMatchSetup, long liveMatchId, int mapNumber, string seriesType)
-        {
-            try
-            {
-                using (var connection = CreateConnection())
-                {
-                    connection.Open();
-                    
-                    string mapName = Server.MapName;
-                    string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
-
-                    Log($"[InitMatch] Starting match initialization - isMatchSetup: {isMatchSetup}, liveMatchId: {liveMatchId}, mapNumber: {mapNumber}");
-
-                    if (mapNumber == 0) {
-                        if (isMatchSetup && liveMatchId != -1) {
-                            // Check if the match already exists
-                            var existingMatch = connection.QuerySingleOrDefault<long?>("SELECT matchid FROM squidcup_stats_matches WHERE matchid = @liveMatchId", new { liveMatchId });
-                            
-                            if (existingMatch == null) {
-                                connection.Execute(@"
-                                    INSERT INTO squidcup_stats_matches (matchid, start_time, team1_name, team2_name, series_type, server_ip)
-                                    VALUES (@liveMatchId, " + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
-                                    new { liveMatchId, team1name, team2name, seriesType, serverIp });
-                                Log($"[InitMatch] Created new match record with matchid: {liveMatchId}");
-                            } else {
-                                Log($"[InitMatch] Match record with matchid: {liveMatchId} already exists, skipping insertion");
-                            }
-                        } else {
-                            connection.Execute(@"
-                                INSERT INTO squidcup_stats_matches (start_time, team1_name, team2_name, series_type, server_ip)
-                                VALUES (" + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
-                                new { team1name, team2name, seriesType, serverIp });
-                            Log($"[InitMatch] Created new match record (auto-generated matchid)");
-                        }
-                    }
-
-                    if (isMatchSetup && liveMatchId != -1) {
-                        // Check if the map record already exists for this match and map number
-                        var existingMap = connection.QuerySingleOrDefault<long?>("SELECT matchid FROM squidcup_stats_maps WHERE matchid = @liveMatchId AND mapnumber = @mapNumber", new { liveMatchId, mapNumber });
-                        
-                        if (existingMap == null) {
-                            connection.Execute(@"
-                                INSERT INTO squidcup_stats_maps (matchid, start_time, mapnumber, mapname)
-                                VALUES (@liveMatchId, " + dateTimeExpression + ", @mapNumber, @mapName)",
-                                new { liveMatchId, mapNumber, mapName });
-                            Log($"[InitMatch] Created new map record with matchid: {liveMatchId}, mapnumber: {mapNumber}");
-                        } else {
-                            Log($"[InitMatch] Map record with matchid: {liveMatchId}, mapnumber: {mapNumber} already exists, skipping insertion");
-                        }
-                        
-                        // Verify the records were created/exist
-                        var verifyMatch = connection.QuerySingleOrDefault<long?>("SELECT matchid FROM squidcup_stats_matches WHERE matchid = @liveMatchId", new { liveMatchId });
-                        var verifyMap = connection.QuerySingleOrDefault<long?>("SELECT matchid FROM squidcup_stats_maps WHERE matchid = @liveMatchId AND mapnumber = @mapNumber", new { liveMatchId, mapNumber });
-                        
-                        Log($"[InitMatch] Verification - Match exists: {verifyMatch != null}, Map exists: {verifyMap != null}");
-                        
-                        return liveMatchId;
-                    }
-
-                    // Retrieve the last inserted match_id
-                    long matchId = -1;
-                    if (connection is SqliteConnection)
-                    {
-                        matchId = connection.ExecuteScalar<long>("SELECT last_insert_rowid()");
-                    }
-                    else if (connection is MySqlConnection)
-                    {
-                        matchId = connection.ExecuteScalar<long>("SELECT LAST_INSERT_ID()");
-                    }
-
-                    connection.Execute(@"
-                        INSERT INTO squidcup_stats_maps (matchid, start_time, mapnumber, mapname)
-                        VALUES (@matchId, " + dateTimeExpression + ", @mapNumber, @mapName)",
-                        new { matchId, mapNumber, mapName });
-
-                    Log($"[InitMatch] Data inserted into squidcup_stats_matches with match_id: {matchId}");
-                    return matchId;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"[InitMatch - FATAL] Error inserting data for matchId: {liveMatchId}, mapNumber: {mapNumber} [ERROR]: {ex.Message}");
-                Log($"[InitMatch - FATAL] Stack trace: {ex.StackTrace}");
-                return liveMatchId;
-            }
-        }
-
-        public void UpdateTeamData(int matchId, string team1name, string team2name) {
-            try
-            {
-                using (var connection = CreateConnection())
-                {
-                    connection.Open();
-                    
-                    connection.Execute(@"
-                        UPDATE squidcup_stats_matches
-                        SET team1_name = @team1name, team2_name = @team2name
-                        WHERE matchid = @matchId",
-                        new { matchId, team1name, team2name });
-
-                    Log($"[UpdateTeamData] Data updated for matchId: {matchId} team1name: {team1name} team2name: {team2name}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"[UpdateTeamData - FATAL] Error updating data of matchId: {matchId} [ERROR]: {ex.Message}");
-            }
-        }
-
-        public async Task SetMapEndData(long matchId, int mapNumber, string winnerName, int t1score, int t2score, int team1SeriesScore, int team2SeriesScore)
-        {
-            int maxRetries = 5;
-            int retryDelay = 2000; // 2 seconds in milliseconds
+            LoadConfig(moduleDirectory);
+            pendingQueuePath = Path.Join(moduleDirectory, "pending_stats.json");
             
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    using (var connection = CreateConnection())
-                    {
-                        connection.Open();
-                        
-                        string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
-
-                        string sqlQuery = $@"
-                            UPDATE squidcup_stats_maps
-                            SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
-                            WHERE matchid = @matchId AND mapNumber = @mapNumber";
-
-                        int mapsRowsAffected = await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score, mapNumber });
-
-                        sqlQuery = $@"
-                            UPDATE squidcup_stats_matches
-                            SET team1_score = @team1SeriesScore, team2_score = @team2SeriesScore
-                            WHERE matchid = @matchId";
-
-                        int matchesRowsAffected = await connection.ExecuteAsync(sqlQuery, new { matchId, team1SeriesScore, team2SeriesScore });
-
-                        Log($"[SetMapEndData] Data updated for matchId: {matchId} mapNumber: {mapNumber} winnerName: {winnerName} (Maps rows: {mapsRowsAffected}, Matches rows: {matchesRowsAffected})");
-                        
-                        if (mapsRowsAffected == 0)
-                        {
-                            Log($"[SetMapEndData - WARNING] No map record found for matchId: {matchId} mapNumber: {mapNumber} - UPDATE affected 0 rows");
-                        }
-                        if (matchesRowsAffected == 0)
-                        {
-                            Log($"[SetMapEndData - WARNING] No match record found for matchId: {matchId} - UPDATE affected 0 rows");
-                        }
-                        
-                        return; // Success, exit the retry loop
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (attempt == maxRetries)
-                    {
-                        Log($"[SetMapEndData - FATAL] Error updating data of matchId: {matchId} mapNumber: {mapNumber} after {maxRetries} attempts [ERROR]: {ex.Message}");
-                    }
-                    else
-                    {
-                        Log($"[SetMapEndData] Attempt {attempt}/{maxRetries} failed for matchId: {matchId} mapNumber: {mapNumber} [ERROR]: {ex.Message}. Retrying in {retryDelay}ms...");
-                        await Task.Delay(retryDelay);
-                    }
-                }
-            }
+            // Process any pending requests from previous session
+            _ = Task.Run(ProcessPendingQueueAsync);
         }
 
-        public async Task SetMatchEndData(long matchId, string winnerName, int t1score, int t2score)
+        private void LoadConfig(string moduleDirectory)
         {
-            int maxRetries = 5;
-            int retryDelay = 2000; // 2 seconds in milliseconds
+            string configFile = Path.Combine(Server.GameDirectory + "/csgo/cfg/Squidcup", "database.json");
             
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    using (var connection = CreateConnection())
-                    {
-                        connection.Open();
-                        
-                        string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
-
-                        string sqlQuery = $@"
-                            UPDATE squidcup_stats_matches
-                            SET winner = @winnerName, end_time = {dateTimeExpression}, team1_score = @t1score, team2_score = @t2score
-                            WHERE matchid = @matchId";
-
-                        int rowsAffected = await connection.ExecuteAsync(sqlQuery, new { matchId, winnerName, t1score, t2score });
-
-                        Log($"[SetMatchEndData] Data updated for matchId: {matchId} winnerName: {winnerName} (Rows affected: {rowsAffected})");
-                        
-                        if (rowsAffected == 0)
-                        {
-                            Log($"[SetMatchEndData - WARNING] No match record found for matchId: {matchId} - UPDATE affected 0 rows");
-                        }
-                        
-                        return; // Success, exit the retry loop
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (attempt == maxRetries)
-                    {
-                        Log($"[SetMatchEndData - FATAL] Error updating data of matchId: {matchId} after {maxRetries} attempts [ERROR]: {ex.Message}");
-                    }
-                    else
-                    {
-                        Log($"[SetMatchEndData] Attempt {attempt}/{maxRetries} failed for matchId: {matchId} [ERROR]: {ex.Message}. Retrying in {retryDelay}ms...");
-                        await Task.Delay(retryDelay);
-                    }
-                }
-            }
-        }
-
-        public async Task UpdateMapStatsAsync(long matchId, int mapNumber, int t1score, int t2score)
-        {
-            try
-            {
-                using (var connection = CreateConnection())
-                {
-                    connection.Open();
-                    
-                    string sqlQuery = $@"
-                        UPDATE squidcup_stats_maps
-                        SET team1_score = @t1score, team2_score = @t2score
-                        WHERE matchid = @matchId AND mapnumber = @mapNumber";
-
-                    await connection.ExecuteAsync(sqlQuery, new { matchId, mapNumber, t1score, t2score });
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"[UpdateMapStatsAsync - FATAL] Error updating data of matchId: {matchId} [ERROR]: {ex.Message}");
-            }
-        }
-
-        public async Task UpdatePlayerStatsAsync(long matchId, int mapNumber, Dictionary<ulong, Dictionary<string, object>> playerStatsDictionary)
-        {
-            try
-            {
-                using (var connection = CreateConnection())
-                {
-                    connection.Open();
-
-                    foreach (ulong steamid64 in playerStatsDictionary.Keys)
-                    {
-                        Log($"[UpdatePlayerStats] Going to update data for Match: {matchId}, MapNumber: {mapNumber}, Player: {steamid64}");
-
-                        var playerStats = playerStatsDictionary[steamid64];
-
-                        string sqlQuery = $@"
-                    INSERT INTO squidcup_stats_players (
-                        matchid, mapnumber, steamid64, team, name, kills, deaths, damage, assists,
-                        enemy5ks, enemy4ks, enemy3ks, enemy2ks, utility_count, utility_damage,
-                        utility_successes, utility_enemies, flash_count, flash_successes,
-                        health_points_removed_total, health_points_dealt_total, shots_fired_total,
-                        shots_on_target_total, v1_count, v1_wins, v2_count, v2_wins, entry_count, entry_wins,
-                        equipment_value, money_saved, kill_reward, live_time, head_shot_kills,
-                        cash_earned, enemies_flashed)
-                    VALUES (
-                        @matchId, @mapNumber, @steamid64, @team, @name, @kills, @deaths, @damage, @assists,
-                        @enemy5ks, @enemy4ks, @enemy3ks, @enemy2ks, @utility_count, @utility_damage,
-                        @utility_successes, @utility_enemies, @flash_count, @flash_successes,
-                        @health_points_removed_total, @health_points_dealt_total, @shots_fired_total,
-                        @shots_on_target_total, @v1_count, @v1_wins, @v2_count, @v2_wins, @entry_count,
-                        @entry_wins, @equipment_value, @money_saved, @kill_reward, @live_time,
-                        @head_shot_kills, @cash_earned, @enemies_flashed)
-                    ON DUPLICATE KEY UPDATE
-                        team = @team, name = @name, kills = @kills, deaths = @deaths, damage = @damage,
-                        assists = @assists, enemy5ks = @enemy5ks, enemy4ks = @enemy4ks, enemy3ks = @enemy3ks,
-                        enemy2ks = @enemy2ks, utility_count = @utility_count, utility_damage = @utility_damage,
-                        utility_successes = @utility_successes, utility_enemies = @utility_enemies,
-                        flash_count = @flash_count, flash_successes = @flash_successes,
-                        health_points_removed_total = @health_points_removed_total,
-                        health_points_dealt_total = @health_points_dealt_total,
-                        shots_fired_total = @shots_fired_total, shots_on_target_total = @shots_on_target_total,
-                        v1_count = @v1_count, v1_wins = @v1_wins, v2_count = @v2_count, v2_wins = @v2_wins,
-                        entry_count = @entry_count, entry_wins = @entry_wins,
-                        equipment_value = @equipment_value, money_saved = @money_saved,
-                        kill_reward = @kill_reward, live_time = @live_time, head_shot_kills = @head_shot_kills,
-                        cash_earned = @cash_earned, enemies_flashed = @enemies_flashed";
-
-                    if (connection is SqliteConnection) {
-                        sqlQuery = @"
-                        INSERT OR REPLACE INTO squidcup_stats_players (
-                            matchid, mapnumber, steamid64, team, name, kills, deaths, damage, assists,
-                            enemy5ks, enemy4ks, enemy3ks, enemy2ks, utility_count, utility_damage,
-                            utility_successes, utility_enemies, flash_count, flash_successes,
-                            health_points_removed_total, health_points_dealt_total, shots_fired_total,
-                            shots_on_target_total, v1_count, v1_wins, v2_count, v2_wins, entry_count, entry_wins,
-                            equipment_value, money_saved, kill_reward, live_time, head_shot_kills,
-                            cash_earned, enemies_flashed)
-                        VALUES (
-                            @matchId, @mapNumber, @steamid64, @team, @name, @kills, @deaths, @damage, @assists,
-                            @enemy5ks, @enemy4ks, @enemy3ks, @enemy2ks, @utility_count, @utility_damage,
-                            @utility_successes, @utility_enemies, @flash_count, @flash_successes,
-                            @health_points_removed_total, @health_points_dealt_total, @shots_fired_total,
-                            @shots_on_target_total, @v1_count, @v1_wins, @v2_count, @v2_wins, @entry_count,
-                            @entry_wins, @equipment_value, @money_saved, @kill_reward, @live_time,
-                            @head_shot_kills, @cash_earned, @enemies_flashed)";
-                    }
-
-                    await connection.ExecuteAsync(sqlQuery,
-                        new
-                        {
-                            matchId,
-                            mapNumber,
-                            steamid64,
-                            team = playerStats["TeamName"],
-                            name = playerStats["PlayerName"],
-                            kills = playerStats["Kills"],
-                            deaths = playerStats["Deaths"],
-                            damage = playerStats["Damage"],
-                            assists = playerStats["Assists"],
-                            enemy5ks = playerStats["Enemy5Ks"],
-                            enemy4ks = playerStats["Enemy4Ks"],
-                            enemy3ks = playerStats["Enemy3Ks"],
-                            enemy2ks = playerStats["Enemy2Ks"],
-                            utility_count = playerStats["UtilityCount"],
-                            utility_damage = playerStats["UtilityDamage"],
-                            utility_successes = playerStats["UtilitySuccess"],
-                            utility_enemies = playerStats["UtilityEnemies"],
-                            flash_count = playerStats["FlashCount"],
-                            flash_successes = playerStats["FlashSuccess"],
-                            health_points_removed_total = playerStats["HealthPointsRemovedTotal"],
-                            health_points_dealt_total = playerStats["HealthPointsDealtTotal"],
-                            shots_fired_total = playerStats["ShotsFiredTotal"],
-                            shots_on_target_total = playerStats["ShotsOnTargetTotal"],
-                            v1_count = playerStats["1v1Count"],
-                            v1_wins = playerStats["1v1Wins"],
-                            v2_count = playerStats["1v2Count"],
-                            v2_wins = playerStats["1v2Wins"],
-                            entry_count = playerStats["EntryCount"],
-                            entry_wins = playerStats["EntryWins"],
-                            equipment_value = playerStats["EquipmentValue"],
-                            money_saved = playerStats["MoneySaved"],
-                            kill_reward = playerStats["KillReward"],
-                            live_time = playerStats["LiveTime"],
-                            head_shot_kills = playerStats["HeadShotKills"],
-                            cash_earned = playerStats["CashEarned"],
-                            enemies_flashed = playerStats["EnemiesFlashed"]
-                        });
-
-                    Log($"[UpdatePlayerStats] Data inserted/updated for player {steamid64} in match {matchId}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($"[UpdatePlayerStats - FATAL] Error inserting/updating data: {ex.Message}");
-            }
-        }
-
-        public async Task WritePlayerStatsToCsv(string filePath, long matchId, int mapNumber)
-        {
-            try {
-                string csvFilePath = $"{filePath}/match_data_map{mapNumber}_{matchId}.csv";
-                string? directoryPath = Path.GetDirectoryName(csvFilePath);
-                if (directoryPath != null)
-                {
-                    if (!Directory.Exists(directoryPath))
-                    {
-                        Directory.CreateDirectory(directoryPath);
-                    }
-                }
-
-                using (var connection = CreateConnection())
-                {
-                    connection.Open();
-                    
-                    using (var writer = new StreamWriter(csvFilePath))
-                    using (var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)))
-                    {
-                        IEnumerable<dynamic> playerStatsData = await connection.QueryAsync(
-                            "SELECT * FROM squidcup_stats_players WHERE matchid = @MatchId AND mapnumber = @MapNumber ORDER BY team, kills DESC", new { MatchId = matchId, MapNumber = mapNumber });
-
-                        // Use the first data row to get the column names
-                        dynamic? firstDataRow = playerStatsData.FirstOrDefault();
-                        if (firstDataRow != null)
-                        {
-                            foreach (var propertyName in ((IDictionary<string, object>)firstDataRow).Keys)
-                            {
-                                csv.WriteField(propertyName);
-                            }
-                            csv.NextRecord(); // End of the column names row
-
-                            // Write data to the CSV file
-                            foreach (var playerStats in playerStatsData)
-                            {
-                                foreach (var propertyValue in ((IDictionary<string, object>)playerStats).Values)
-                                {
-                                    csv.WriteField(propertyValue);
-                                }
-                                csv.NextRecord();
-                            }
-                        }
-                    }
-                }
-                
-                Log($"[WritePlayerStatsToCsv] Match stats for ID: {matchId} written successfully at: {csvFilePath}");
-            }
-            catch (Exception ex)
-            {
-                Log($"[WritePlayerStatsToCsv - FATAL] Error writing data: {ex.Message}");
-            }
-        }
-
-        private void CreateDefaultConfigFile(string configFile)
-        {
-            // Create a default configuration
-            DatabaseConfig defaultConfig = new DatabaseConfig
-            {
-                DatabaseType = "SQLite",
-                MySqlHost = "your_mysql_host",
-                MySqlDatabase = "your_mysql_database",
-                MySqlUsername = "your_mysql_username",
-                MySqlPassword = "your_mysql_password",
-                MySqlPort = 3306
-            };
-
-            // Serialize and save the default configuration to the file
-            string defaultConfigJson = JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(configFile, defaultConfigJson);
-
-            Log($"[InitializeDatabase] Default configuration file created at: {configFile}");
-        }
-
-        private void SetDatabaseConfig(string directory)
-        {
-            string fileName = "database.json";
-            string configFile = Path.Combine(Server.GameDirectory + "/csgo/cfg/Squidcup", fileName);
             if (!File.Exists(configFile))
             {
-                // Create a default configuration if the file doesn't exist
-                Log($"[InitializeDatabase] database.json doesn't exist, creating default!");
-                CreateDefaultConfigFile(configFile);
+                // Create default config
+                var defaultConfig = new ApiConfig { ApiBaseUrl = "https://your-api.example.com" };
+                string json = JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(configFile, json);
+                Log($"[Initialize] Default config created at: {configFile}");
             }
 
             try
             {
                 string jsonContent = File.ReadAllText(configFile);
-                config = JsonSerializer.Deserialize<DatabaseConfig>(jsonContent);
-                // Set the database type
-                if (config != null && config.DatabaseType?.Trim().ToLower() == "mysql") {
-                    databaseType = DatabaseType.MySQL;
-                } else {
-                    databaseType = DatabaseType.SQLite;
+                var config = JsonSerializer.Deserialize<ApiConfig>(jsonContent);
+                if (config?.ApiBaseUrl != null)
+                {
+                    apiBaseUrl = config.ApiBaseUrl.TrimEnd('/');
+                    Log($"[Initialize] API Base URL: {apiBaseUrl}");
                 }
-                
+                else
+                {
+                    Log("[Initialize - ERROR] ApiBaseUrl not found in config");
+                }
             }
-            catch (JsonException ex)
+            catch (Exception ex)
             {
-                Log($"[TryDeserializeConfig - ERROR] Error deserializing database.json: {ex.Message}. Using SQLite DB");
-                databaseType = DatabaseType.SQLite;
+                Log($"[Initialize - ERROR] Failed to load config: {ex.Message}");
             }
         }
+
+        #region API Methods
+
+        public long InitMatch(string team1Name, string team2Name, string serverIp, bool isMatchSetup, long liveMatchId, int mapNumber, string seriesType)
+        {
+            string mapName = Server.MapName;
+            
+            var request = new InitMatchRequest
+            {
+                MatchId = liveMatchId != -1 ? liveMatchId : null,
+                Team1Name = team1Name,
+                Team2Name = team2Name,
+                ServerIp = serverIp,
+                SeriesType = seriesType,
+                MapNumber = mapNumber,
+                MapName = mapName
+            };
+
+            var response = SendRequestWithRetry<InitMatchResponse>("POST", "/api/matches", request);
+            
+            if (response?.MatchId != null)
+            {
+                Log($"[InitMatch] Match initialized with ID: {response.MatchId}");
+                return response.MatchId.Value;
+            }
+            
+            Log($"[InitMatch] Failed to get match ID from API, using provided ID: {liveMatchId}");
+            return liveMatchId;
+        }
+
+        public void UpdateTeamData(int matchId, string team1Name, string team2Name)
+        {
+            // Team data is set during InitMatch, no separate endpoint needed
+            Log($"[UpdateTeamData] Team data update requested for matchId: {matchId} - handled by InitMatch");
+        }
+
+        public async Task UpdatePlayerStatsAsync(long matchId, int mapNumber, Dictionary<ulong, Dictionary<string, object>> playerStatsDictionary)
+        {
+            var players = new List<PlayerStatsUpdate>();
+            
+            foreach (var kvp in playerStatsDictionary)
+            {
+                var stats = kvp.Value;
+                players.Add(new PlayerStatsUpdate
+                {
+                    SteamId64 = (long)kvp.Key,
+                    Team = stats["TeamName"]?.ToString() ?? "",
+                    Name = stats["PlayerName"]?.ToString() ?? "",
+                    Kills = Convert.ToInt32(stats["Kills"]),
+                    Deaths = Convert.ToInt32(stats["Deaths"]),
+                    Damage = Convert.ToInt32(stats["Damage"]),
+                    Assists = Convert.ToInt32(stats["Assists"]),
+                    Enemy5ks = Convert.ToInt32(stats["Enemy5Ks"]),
+                    Enemy4ks = Convert.ToInt32(stats["Enemy4Ks"]),
+                    Enemy3ks = Convert.ToInt32(stats["Enemy3Ks"]),
+                    Enemy2ks = Convert.ToInt32(stats["Enemy2Ks"]),
+                    UtilityCount = Convert.ToInt32(stats["UtilityCount"]),
+                    UtilityDamage = Convert.ToInt32(stats["UtilityDamage"]),
+                    UtilitySuccesses = Convert.ToInt32(stats["UtilitySuccess"]),
+                    UtilityEnemies = Convert.ToInt32(stats["UtilityEnemies"]),
+                    FlashCount = Convert.ToInt32(stats["FlashCount"]),
+                    FlashSuccesses = Convert.ToInt32(stats["FlashSuccess"]),
+                    HealthPointsRemovedTotal = Convert.ToInt32(stats["HealthPointsRemovedTotal"]),
+                    HealthPointsDealtTotal = Convert.ToInt32(stats["HealthPointsDealtTotal"]),
+                    ShotsFiredTotal = Convert.ToInt32(stats["ShotsFiredTotal"]),
+                    ShotsOnTargetTotal = Convert.ToInt32(stats["ShotsOnTargetTotal"]),
+                    V1Count = Convert.ToInt32(stats["1v1Count"]),
+                    V1Wins = Convert.ToInt32(stats["1v1Wins"]),
+                    V2Count = Convert.ToInt32(stats["1v2Count"]),
+                    V2Wins = Convert.ToInt32(stats["1v2Wins"]),
+                    EntryCount = Convert.ToInt32(stats["EntryCount"]),
+                    EntryWins = Convert.ToInt32(stats["EntryWins"]),
+                    EquipmentValue = Convert.ToInt32(stats["EquipmentValue"]),
+                    MoneySaved = Convert.ToInt32(stats["MoneySaved"]),
+                    KillReward = Convert.ToInt32(stats["KillReward"]),
+                    LiveTime = Convert.ToInt32(stats["LiveTime"]),
+                    HeadShotKills = Convert.ToInt32(stats["HeadShotKills"]),
+                    CashEarned = Convert.ToInt32(stats["CashEarned"]),
+                    EnemiesFlashed = Convert.ToInt32(stats["EnemiesFlashed"])
+                });
+            }
+
+            var request = new UpdatePlayersRequest { Players = players };
+            string endpoint = $"/api/matches/{matchId}/maps/{mapNumber}/players";
+            
+            await Task.Run(() => SendRequestWithRetry<ApiResponse>("PUT", endpoint, request));
+            Log($"[UpdatePlayerStatsAsync] Updated stats for {players.Count} players in match {matchId}");
+        }
+
+        public async Task UpdateMapStatsAsync(long matchId, int mapNumber, int t1Score, int t2Score)
+        {
+            var request = new UpdateMapScoresRequest
+            {
+                Team1Score = t1Score,
+                Team2Score = t2Score
+            };
+
+            string endpoint = $"/api/matches/{matchId}/maps/{mapNumber}/scores";
+            await Task.Run(() => SendRequestWithRetry<ApiResponse>("PUT", endpoint, request));
+            Log($"[UpdateMapStatsAsync] Updated scores for match {matchId} map {mapNumber}: {t1Score}-{t2Score}");
+        }
+
+        public async Task SetMapEndData(long matchId, int mapNumber, string winnerName, int t1Score, int t2Score, int team1SeriesScore, int team2SeriesScore)
+        {
+            var request = new EndMapRequest
+            {
+                WinnerName = winnerName,
+                Team1Score = t1Score,
+                Team2Score = t2Score,
+                Team1SeriesScore = team1SeriesScore,
+                Team2SeriesScore = team2SeriesScore
+            };
+
+            string endpoint = $"/api/matches/{matchId}/maps/{mapNumber}/end";
+            await Task.Run(() => SendRequestWithRetry<ApiResponse>("POST", endpoint, request));
+            Log($"[SetMapEndData] Finalized map {mapNumber} for match {matchId}, winner: {winnerName}");
+        }
+
+        public async Task SetMatchEndData(long matchId, string winnerName, int t1Score, int t2Score)
+        {
+            var request = new EndMatchRequest
+            {
+                WinnerName = winnerName,
+                Team1Score = t1Score,
+                Team2Score = t2Score
+            };
+
+            string endpoint = $"/api/matches/{matchId}/end";
+            await Task.Run(() => SendRequestWithRetry<ApiResponse>("POST", endpoint, request));
+            Log($"[SetMatchEndData] Finalized match {matchId}, winner: {winnerName}");
+        }
+
+        #endregion
+
+        #region HTTP Client with Retry
+
+        private T? SendRequestWithRetry<T>(string method, string endpoint, object payload) where T : class
+        {
+            int maxRetries = 3;
+            int[] delaysMs = { 1000, 2000, 4000 }; // Exponential backoff
+
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                try
+                {
+                    var result = SendRequest<T>(method, endpoint, payload);
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log($"[SendRequest] Attempt {attempt + 1}/{maxRetries} failed for {method} {endpoint}: {ex.Message}");
+                }
+
+                if (attempt < maxRetries - 1)
+                {
+                    Thread.Sleep(delaysMs[attempt]);
+                }
+            }
+
+            // All retries failed, queue for later
+            Log($"[SendRequest] All retries failed, queueing request: {method} {endpoint}");
+            QueueFailedRequest(method, endpoint, payload);
+            return null;
+        }
+
+        private T? SendRequest<T>(string method, string endpoint, object payload) where T : class
+        {
+            string url = apiBaseUrl + endpoint;
+            string jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions 
+            { 
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+            });
+
+            using var request = new HttpRequestMessage(new HttpMethod(method), url);
+            request.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+            var response = httpClient.Send(request);
+            string responseBody = new StreamReader(response.Content.ReadAsStream()).ReadToEnd();
+
+            if (response.IsSuccessStatusCode)
+            {
+                if (typeof(T) == typeof(ApiResponse))
+                {
+                    return new ApiResponse { Success = true } as T;
+                }
+                return JsonSerializer.Deserialize<T>(responseBody, new JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true 
+                });
+            }
+
+            Log($"[SendRequest] HTTP {(int)response.StatusCode} for {method} {endpoint}: {responseBody}");
+            throw new HttpRequestException($"HTTP {response.StatusCode}");
+        }
+
+        #endregion
+
+        #region Request Queue
+
+        private void QueueFailedRequest(string method, string endpoint, object payload)
+        {
+            try
+            {
+                lock (queueLock)
+                {
+                    var queue = LoadQueue();
+                    queue.Add(new QueuedRequest
+                    {
+                        Method = method,
+                        Endpoint = endpoint,
+                        Payload = JsonSerializer.Serialize(payload),
+                        Timestamp = DateTime.UtcNow
+                    });
+                    SaveQueue(queue);
+                }
+                Log($"[Queue] Request queued. Queue size: {LoadQueue().Count}");
+            }
+            catch (Exception ex)
+            {
+                Log($"[Queue - ERROR] Failed to queue request: {ex.Message}");
+            }
+        }
+
+        private List<QueuedRequest> LoadQueue()
+        {
+            if (!File.Exists(pendingQueuePath))
+            {
+                return new List<QueuedRequest>();
+            }
+
+            try
+            {
+                string json = File.ReadAllText(pendingQueuePath);
+                return JsonSerializer.Deserialize<List<QueuedRequest>>(json) ?? new List<QueuedRequest>();
+            }
+            catch
+            {
+                return new List<QueuedRequest>();
+            }
+        }
+
+        private void SaveQueue(List<QueuedRequest> queue)
+        {
+            string json = JsonSerializer.Serialize(queue, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(pendingQueuePath, json);
+        }
+
+        private async Task ProcessPendingQueueAsync()
+        {
+            while (true)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(60));
+
+                List<QueuedRequest> queue;
+                lock (queueLock)
+                {
+                    queue = LoadQueue();
+                    if (queue.Count == 0) continue;
+                }
+
+                Log($"[Queue] Processing {queue.Count} pending requests...");
+                var remaining = new List<QueuedRequest>();
+
+                foreach (var item in queue)
+                {
+                    try
+                    {
+                        var payload = JsonSerializer.Deserialize<object>(item.Payload);
+                        var result = SendRequest<ApiResponse>(item.Method, item.Endpoint, payload!);
+                        
+                        if (result == null)
+                        {
+                            remaining.Add(item);
+                        }
+                        else
+                        {
+                            Log($"[Queue] Successfully processed: {item.Method} {item.Endpoint}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"[Queue] Failed to process {item.Method} {item.Endpoint}: {ex.Message}");
+                        remaining.Add(item);
+                    }
+                }
+
+                lock (queueLock)
+                {
+                    SaveQueue(remaining);
+                }
+
+                if (remaining.Count < queue.Count)
+                {
+                    Log($"[Queue] Processed {queue.Count - remaining.Count} requests, {remaining.Count} remaining");
+                }
+            }
+        }
+
+        #endregion
 
         private void Log(string message)
         {
             Console.WriteLine("[Squidcup] " + message);
         }
-
-        public enum DatabaseType
-        {
-            SQLite,
-            MySQL
-        }
     }
 
-    public class DatabaseConfig
+    #region DTOs
+
+    public class ApiConfig
     {
-        public string? DatabaseType { get; set; }
-        public string? MySqlHost { get; set; }
-        public string? MySqlDatabase { get; set; }
-        public string? MySqlUsername { get; set; }
-        public string? MySqlPassword { get; set; }
-        public int? MySqlPort { get; set; }
+        public string? ApiBaseUrl { get; set; }
     }
 
+    public class ApiResponse
+    {
+        public bool Success { get; set; }
+    }
+
+    public class InitMatchRequest
+    {
+        public long? MatchId { get; set; }
+        public string Team1Name { get; set; } = "";
+        public string Team2Name { get; set; } = "";
+        public string ServerIp { get; set; } = "";
+        public string SeriesType { get; set; } = "";
+        public int MapNumber { get; set; }
+        public string MapName { get; set; } = "";
+    }
+
+    public class InitMatchResponse
+    {
+        public long? MatchId { get; set; }
+        public bool Success { get; set; }
+    }
+
+    public class PlayerStatsUpdate
+    {
+        public long SteamId64 { get; set; }
+        public string Team { get; set; } = "";
+        public string Name { get; set; } = "";
+        public int Kills { get; set; }
+        public int Deaths { get; set; }
+        public int Damage { get; set; }
+        public int Assists { get; set; }
+        public int Enemy5ks { get; set; }
+        public int Enemy4ks { get; set; }
+        public int Enemy3ks { get; set; }
+        public int Enemy2ks { get; set; }
+        public int UtilityCount { get; set; }
+        public int UtilityDamage { get; set; }
+        public int UtilitySuccesses { get; set; }
+        public int UtilityEnemies { get; set; }
+        public int FlashCount { get; set; }
+        public int FlashSuccesses { get; set; }
+        public int HealthPointsRemovedTotal { get; set; }
+        public int HealthPointsDealtTotal { get; set; }
+        public int ShotsFiredTotal { get; set; }
+        public int ShotsOnTargetTotal { get; set; }
+        public int V1Count { get; set; }
+        public int V1Wins { get; set; }
+        public int V2Count { get; set; }
+        public int V2Wins { get; set; }
+        public int EntryCount { get; set; }
+        public int EntryWins { get; set; }
+        public int EquipmentValue { get; set; }
+        public int MoneySaved { get; set; }
+        public int KillReward { get; set; }
+        public int LiveTime { get; set; }
+        public int HeadShotKills { get; set; }
+        public int CashEarned { get; set; }
+        public int EnemiesFlashed { get; set; }
+    }
+
+    public class UpdatePlayersRequest
+    {
+        public List<PlayerStatsUpdate> Players { get; set; } = new();
+    }
+
+    public class UpdateMapScoresRequest
+    {
+        public int Team1Score { get; set; }
+        public int Team2Score { get; set; }
+    }
+
+    public class EndMapRequest
+    {
+        public string WinnerName { get; set; } = "";
+        public int Team1Score { get; set; }
+        public int Team2Score { get; set; }
+        public int Team1SeriesScore { get; set; }
+        public int Team2SeriesScore { get; set; }
+    }
+
+    public class EndMatchRequest
+    {
+        public string WinnerName { get; set; } = "";
+        public int Team1Score { get; set; }
+        public int Team2Score { get; set; }
+    }
+
+    public class QueuedRequest
+    {
+        public string Method { get; set; } = "";
+        public string Endpoint { get; set; } = "";
+        public string Payload { get; set; } = "";
+        public DateTime Timestamp { get; set; }
+    }
+
+    #endregion
 }

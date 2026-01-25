@@ -912,8 +912,6 @@ namespace Squidcup
             string winnerName = GetMatchWinnerName();
             (int t1score, int t2score) = GetTeamsScore();
 
-            string statsPath = Server.GameDirectory + "/csgo/Squidcup_Stats/" + liveMatchId.ToString();
-
             var mapResultEvent = new MapResultEvent
             {
                 MatchId = liveMatchId,
@@ -927,7 +925,6 @@ namespace Squidcup
             {
                 await SendEventAsync(mapResultEvent);
                 await database.SetMapEndData(liveMatchId, currentMapNumber, winnerName, t1score, t2score, 0, 0);
-                await database.WritePlayerStatsToCsv(statsPath, liveMatchId, currentMapNumber);
             });
 
             // For BO1, the match always ends after the first map

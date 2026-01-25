@@ -14,7 +14,7 @@ namespace Squidcup
     {
 
         public override string ModuleName => "Squidcup";
-        public override string ModuleVersion => "0.9.7";
+        public override string ModuleVersion => "0.9.8";
 
         public override string ModuleAuthor => "Squidski (https://github.com/18swenskiq)";
 
@@ -81,14 +81,14 @@ namespace Squidcup
         // User command - action map
         public Dictionary<string, Action<CCSPlayerController?, CommandInfo?>>? commandActions;
 
-        // SQLite/MySQL Database 
-        private Database database = new();
+        // Stats API Client
+        private StatsApiClient database = new();
     
         public override void Load(bool hotReload) {
             
             LoadAdmins();
 
-            database.InitializeDatabase(ModuleDirectory);
+            database.Initialize(ModuleDirectory);
 
             // This sets default config ConVars
             Server.ExecuteCommand("execifexists Squidcup/config.cfg");
